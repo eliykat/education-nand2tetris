@@ -187,25 +187,98 @@ export class CodeWriter {
 
     writePushPop(command: string, segment: string, index: number) {
 
+        let segment_asm: string;
+
+        // Translate vm segment name to asm symbol
+        switch (segment) {
+
+            case "local": {
+                segment_asm = "LCL";
+                break;
+            }
+            case "argument": {
+                segment_asm = "ARG";
+                break;
+            }
+            case "this": {
+                segment_asm = "THIS";
+                break;
+            }
+            case "that": {
+                segment_asm = "THAT";
+                break;
+            }
+            case "temp": {
+                segment_asm = "5"; // No asm symbol for this
+                break;
+            }
+            case "constant": {
+                // Entirely virtual segment, no action required
+                // But don't want to throw an error
+                break;
+            }
+            default: {
+                throw "CodeWriter Error: PushPop: segment not found";
+            }
+        }
+
         if (command == "push") {
+
             if (segment == "constant") {
                 this.writeToFile([
+                    // Store constant in D
                     "// Push constant " + index + " to stack",
-                    "@" + index,    //Store constant in A
-                    "D=A",          // Store constant in D
-                    "@SP",          // Load SP address into A
-                    "A=M",          // Load value of SP into A
-                    "M=D",          // Store constant in top of stack
-                    "@SP",
-                    "M=M+1"         // Increment SP by 1
+                    "@" + index,
+                    "D=A",
                 ]);
+            } 
+            else {
+                // Fetch source value and store in D
+                this.writeToFile([
+                    "// Pushing to stack from " + segment + " with index of " + index,
+                    "@" + segment_asm,
+                    "D=A",
+                    "@" + index,
+                    "D=D+A"
+                ])
             }
+
+            // Write D value to stack (loaded above) and increment SP by 1
+            this.writeToFile([
+                "@SP",
+                "A=M",
+                "M=D",
+                "@SP",
+                "M=M+1"
+            ])
         } 
+
+        else if (command == "pop") {
+
+            this.writeToFile([
+                "// Popping from " + segment + " with index of " + index,
+                // Calculate and store address of destination (segment + index)
+                // This is stored in R13 (the first of general purpose registers)
+                "@" + segment_asm,
+                "D=A",
+                "@" + index,
+                "D=D+A",
+                "@R13",
+                "M=D",
+                // Get value on top of stack and decrement SP
+                "@SP",
+                "M=M-1",
+                "A=M",
+                "D=M",
+                // Store value in destination
+                "@R13",
+                "M=D"
+            ])
+
+        }
         else {
             throw "Error in CodeWriter: WritePushPop: command not matched";
         }
-        
-
     }
 
     close(){
