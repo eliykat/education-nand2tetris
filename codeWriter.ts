@@ -1,10 +1,8 @@
-import { Writable } from 'stream';
-
 const fs = require('fs');
 
 export class CodeWriter {
 
-    output: Writable;
+    output: string;
     counter: number = 0;
 
     setFileName(filname: string){
@@ -290,27 +288,15 @@ export class CodeWriter {
             "@END",
             "0;JMP"
         ])
-
-        this.output.end((err) => {
-            if (err) throw err;
-            console.log("Closed output file.");
-        });
     }
 
     writeToFile(command: string[]){
         for (let i = 0; i < command.length; i++) {
-            this.output.write(command[i] + "\n", (err) => {
-                if (err) throw err;
-            });
+            fs.appendFileSync(this.output, command[i] + "\n");
         }
     }
 
-    constructor(output_filename: string){
-
-        this.output = fs.createWriteStream(output_filename, (err) => {
-            if (err) throw err;
-            console.log("Successfully opened " + output_filename + " for writing.");
-        });
-        
+    constructor(output: string){
+        this.output = output;
     }
 }
