@@ -17,6 +17,13 @@ do {
             codeWriter.writePushPop("push", parser.arg1(), parser.arg2());
             break;
         }
+        case "C_POP": {
+            codeWriter.writePushPop("pop", parser.arg1(), parser.arg2());
+            break;
+        }
+        default: {
+            throw "VM Error: CommandType not matched";
+        }
     }
 } while (parser.hasMoreCommands());
 codeWriter.close();

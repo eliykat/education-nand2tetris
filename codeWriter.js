@@ -2,15 +2,12 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 var fs = require('fs');
 var CodeWriter = /** @class */ (function () {
-    function CodeWriter(output_filename) {
+    function CodeWriter(output) {
         this.counter = 0;
-        this.output = fs.createWriteStream(output_filename, function (err) {
-            if (err)
-                throw err;
-            console.log("Successfully opened " + output_filename + " for writing.");
-        });
+        this.output = output;
+        fs.writeFileSync(this.output, "// Translation of " + this.output + " to ASM \n");
     }
-    CodeWriter.prototype.setFileName = function (filname) {
+    CodeWriter.prototype.setFileName = function (filename) {
     };
     CodeWriter.prototype.writeArithmetic = function (command) {
         // Increment the unique counter by 1,
@@ -172,19 +169,122 @@ var CodeWriter = /** @class */ (function () {
         }
     };
     CodeWriter.prototype.writePushPop = function (command, segment, index) {
+        var segment_asm;
+        // Translate vm segment name to asm symbol
+        switch (segment) {
+            case "local": {
+                segment_asm = "LCL";
+                break;
+            }
+            case "argument": {
+                segment_asm = "ARG";
+                break;
+            }
+            case "this": {
+                segment_asm = "THIS";
+                break;
+            }
+            case "that": {
+                segment_asm = "THAT";
+                break;
+            }
+            case "temp": {
+                segment_asm = "5"; // No asm symbol for this
+                break;
+            }
+            case "pointer": {
+                segment_asm = "3";
+                break;
+            }
+            case "constant": {
+                // Entirely virtual segment, no action required
+                // But don't want to throw an error
+                break;
+            }
+            default: {
+                throw "CodeWriter Error: PushPop: segment not found";
+            }
+        }
         if (command == "push") {
             if (segment == "constant") {
                 this.writeToFile([
+                    // Store constant in D
                     "// Push constant " + index + " to stack",
                     "@" + index,
                     "D=A",
-                    "@SP",
-                    "A=M",
-                    "M=D",
-                    "@SP",
-                    "M=M+1" // Increment SP by 1
                 ]);
             }
+            else if (segment == "temp" || segment == "pointer") {
+                // Fetch source value and store in D
+                // This is different because these are fixed ranges, we are not dereferencing a pointer as with other segments
+                this.writeToFile([
+                    "// Push value to stack from " + segment + "[" + index + "]",
+                    "@" + segment_asm,
+                    "D=A",
+                    "@" + index,
+                    "A=D+A",
+                    "D=M"
+                ]);
+            }
+            else {
+                // Fetch source value and store in D
+                this.writeToFile([
+                    "// Push value to stack from " + segment + "[" + index + "]",
+                    "@" + segment_asm,
+                    "D=M",
+                    "@" + index,
+                    "A=D+A",
+                    "D=M"
+                ]);
+            }
+            // Write D value to stack (loaded above) and increment SP by 1
+            this.writeToFile([
+                "@SP",
+                "A=M",
+                "M=D",
+                "@SP",
+                "M=M+1"
+            ]);
+        }
+        else if (command == "pop") {
+            if (segment == "temp" || segment == "pointer") {
+                // This is treated differently because these are fixed ranges, we don't need to dereference a pointer
+                this.writeToFile([
+                    "// Pop value from stack to " + segment + "[" + index + "]",
+                    // Calculate and store address of destination (segment + index)
+                    // This is stored in R13 (the first of general purpose registers)
+                    "@" + segment_asm,
+                    "D=A",
+                    "@" + index,
+                    "D=D+A",
+                    "@R13",
+                    "M=D",
+                ]);
+            }
+            else {
+                this.writeToFile([
+                    "// Pop value from stack to " + segment + "[" + index + "]",
+                    // Calculate and store address of destination (segment + index)
+                    // This is stored in R13 (the first of general purpose registers)
+                    "@" + segment_asm,
+                    "D=M",
+                    "@" + index,
+                    "D=D+A",
+                    "@R13",
+                    "M=D",
+                ]);
+            }
+            this.writeToFile([
+                // Get value on top of stack and decrement SP
+                "@SP",
+                "M=M-1",
+                "A=M",
+                "D=M",
+                // Store value in destination
+                "@R13",
+                "A=M",
+                "M=D"
+            ]);
         }
         else {
             throw "Error in CodeWriter: WritePushPop: command not matched";
@@ -198,18 +298,10 @@ var CodeWriter = /** @class */ (function () {
             "@END",
             "0;JMP"
         ]);
-        this.output.end(function (err) {
-            if (err)
-                throw err;
-            console.log("Closed output file.");
-        });
     };
     CodeWriter.prototype.writeToFile = function (command) {
         for (var i = 0; i < command.length; i++) {
-            this.output.write(command[i] + "\n", function (err) {
-                if (err)
-                    throw err;
-            });
+            fs.appendFileSync(this.output, command[i] + "\n");
         }
     };
     return CodeWriter;

@@ -5,7 +5,7 @@ export class CodeWriter {
     output: string;
     counter: number = 0;
 
-    setFileName(filname: string){
+    setFileName(filename: string){
 
     }
 
@@ -210,6 +210,10 @@ export class CodeWriter {
                 segment_asm = "5"; // No asm symbol for this
                 break;
             }
+            case "pointer": {
+                segment_asm = "3";
+                break;
+            }
             case "constant": {
                 // Entirely virtual segment, no action required
                 // But don't want to throw an error
@@ -230,14 +234,27 @@ export class CodeWriter {
                     "D=A",
                 ]);
             } 
-            else {
+            else if (segment == "temp" || segment == "pointer") {
                 // Fetch source value and store in D
+                // This is different because these are fixed ranges, we are not dereferencing a pointer as with other segments
                 this.writeToFile([
-                    "// Pushing to stack from " + segment + " with index of " + index,
+                    "// Push value to stack from " + segment + "[" + index + "]",
                     "@" + segment_asm,
                     "D=A",
                     "@" + index,
-                    "D=D+A"
+                    "A=D+A",
+                    "D=M"
+                ])                
+            }
+            else {
+                // Fetch source value and store in D
+                this.writeToFile([
+                    "// Push value to stack from " + segment + "[" + index + "]",
+                    "@" + segment_asm,
+                    "D=M",
+                    "@" + index,
+                    "A=D+A",
+                    "D=M"
                 ])
             }
 
@@ -253,16 +270,35 @@ export class CodeWriter {
 
         else if (command == "pop") {
 
+            if (segment == "temp" || segment == "pointer") {
+                // This is treated differently because these are fixed ranges, we don't need to dereference a pointer
+                this.writeToFile([
+                    "// Pop value from stack to " + segment + "[" + index + "]",
+                    // Calculate and store address of destination (segment + index)
+                    // This is stored in R13 (the first of general purpose registers)
+                    "@" + segment_asm,
+                    "D=A",
+                    "@" + index,
+                    "D=D+A",
+                    "@R13",
+                    "M=D",
+                ])
+            }
+            else {
+                this.writeToFile([
+                    "// Pop value from stack to " + segment + "[" + index + "]",
+                    // Calculate and store address of destination (segment + index)
+                    // This is stored in R13 (the first of general purpose registers)
+                    "@" + segment_asm,
+                    "D=M",
+                    "@" + index,
+                    "D=D+A",
+                    "@R13",
+                    "M=D",
+                ])
+            }
+
             this.writeToFile([
-                "// Popping from " + segment + " with index of " + index,
-                // Calculate and store address of destination (segment + index)
-                // This is stored in R13 (the first of general purpose registers)
-                "@" + segment_asm,
-                "D=A",
-                "@" + index,
-                "D=D+A",
-                "@R13",
-                "M=D",
                 // Get value on top of stack and decrement SP
                 "@SP",
                 "M=M-1",
@@ -270,8 +306,9 @@ export class CodeWriter {
                 "D=M",
                 // Store value in destination
                 "@R13",
+                "A=M",
                 "M=D"
-            ])
+                ])
 
         }
         else {
@@ -287,7 +324,7 @@ export class CodeWriter {
             "(END)",
             "@END",
             "0;JMP"
-        ])
+        ]);
     }
 
     writeToFile(command: string[]){
@@ -298,5 +335,6 @@ export class CodeWriter {
 
     constructor(output: string){
         this.output = output;
+        fs.writeFileSync(this.output, "// Translation of " + this.output + " to ASM \n");
     }
 }
