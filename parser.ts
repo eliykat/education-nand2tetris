@@ -57,9 +57,9 @@ export class Parser {
         return this.commandArray[1];
     }
 
-    arg2(): number {
+    arg2(): string {
         if (this.commandArray.length < 3) throw "Parser: Arg2: tried to access arg2 when it does not exist.";
-        return Number(this.commandArray[2]);
+        return this.commandArray[2];
     }
 
     ignoreLine(line: string) {

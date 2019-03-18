@@ -60,7 +60,7 @@ var Parser = /** @class */ (function () {
     Parser.prototype.arg2 = function () {
         if (this.commandArray.length < 3)
             throw "Parser: Arg2: tried to access arg2 when it does not exist.";
-        return Number(this.commandArray[2]);
+        return this.commandArray[2];
     };
     Parser.prototype.ignoreLine = function (line) {
         // Returns true if a string is a comment or blank/empty line

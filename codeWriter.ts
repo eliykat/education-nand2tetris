@@ -3,6 +3,7 @@ const fs = require('fs');
 export class CodeWriter {
 
     output: string;
+    name: string;
     counter: number = 0;
 
     setFileName(filename: string){
@@ -183,7 +184,7 @@ export class CodeWriter {
         }
     }
 
-    writePushPop(command: string, segment: string, index: number) {
+    writePushPop(command: string, segment: string, index: string) {
 
         let segment_asm: string;
 
@@ -219,6 +220,12 @@ export class CodeWriter {
                 // But don't want to throw an error
                 break;
             }
+            case "static": {
+                // Static segment approximates fixed variables (e.g. @i)
+                // So we create a unique variable name using the input filename + index number
+                segment_asm = this.name + "." + index;
+                break;
+            }
             default: {
                 throw "CodeWriter Error: PushPop: segment not found";
             }
@@ -245,6 +252,14 @@ export class CodeWriter {
                     "A=D+A",
                     "D=M"
                 ])                
+            }
+            else if (segment == "static") {
+                // Fetch static variable and store in D
+                this.writeToFile([
+                    "// Push value to stack from " + segment + "[" + index + "]",
+                    "@" + segment_asm,
+                    "D=M"
+                ]);
             }
             else {
                 // Fetch source value and store in D
@@ -284,6 +299,18 @@ export class CodeWriter {
                     "M=D",
                 ])
             }
+            else if (segment == "static") {
+                // Static segment is treated differently due to the way it accesses fixed variables
+                // This is a little inefficient because it stores the val in R13 when it doesn't need to,
+                // but it maintains compatability with how the other segments work here
+                this.writeToFile([
+                    "// Pop value from stack to " + segment + "[" + index + "]",
+                    "@" + segment_asm,
+                    "D=A",
+                    "@R13",
+                    "M=D"
+                ])
+            }
             else {
                 this.writeToFile([
                     "// Pop value from stack to " + segment + "[" + index + "]",
@@ -298,6 +325,7 @@ export class CodeWriter {
                 ])
             }
 
+            // Write value to address stored in R13 (which should already be done above)
             this.writeToFile([
                 // Get value on top of stack and decrement SP
                 "@SP",
@@ -335,6 +363,7 @@ export class CodeWriter {
 
     constructor(output: string){
         this.output = output;
+        this.name = output.slice(output.lastIndexOf("\\") + 1, output.lastIndexOf("."));   // This is inefficient but will likely be replaced later once I figure out how to parse an entire directory
         fs.writeFileSync(this.output, "// Translation of " + this.output + " to ASM \n");
     }
 }
