@@ -318,6 +318,32 @@ var CodeWriter = /** @class */ (function () {
             throw "Error in CodeWriter: WritePushPop: command not matched";
         }
     };
+    CodeWriter.prototype.writeInit = function () {
+    };
+    CodeWriter.prototype.writeLabel = function (label) {
+        this.writeToFile([
+            "(" + label + ")"
+        ]);
+        //TODO: THIS MUST BE LIMITED TO THE SCOPE OF THE FUNCTION - CLASSNAME.FUNCTIONNAME_LABEL ?
+    };
+    CodeWriter.prototype.writeGoto = function (label) {
+        this.writeToFile([
+            "@" + label,
+            "0;JMP"
+        ]);
+        //TODO - MUST REFER TO FUNCTION SCOPED LABEL
+    };
+    CodeWriter.prototype.writeIf = function (label) {
+        this.writeToFile([
+            "@SP",
+            "M=M-1",
+            "A=M",
+            "D=M",
+            "@" + label,
+            "D;JNE" //jump if not equal to zero
+        ]);
+        //TODO - MUST REFER TO FUNCTION SCOPED LABEL
+    };
     CodeWriter.prototype.close = function () {
         // Write infinite loop as standard way to terminate hack programs
         this.writeToFile([

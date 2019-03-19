@@ -23,6 +23,18 @@ do {
             codeWriter.writePushPop("pop", parser.arg1(), parser.arg2());
             break;
         }
+        case "C_GOTO": {
+            codeWriter.writeGoto(parser.arg1());
+            break;
+        }
+        case "C_IF": {
+            codeWriter.writeIf(parser.arg1());
+            break;
+        }
+        case "C_LABEL": {
+            codeWriter.writeLabel(parser.arg1());
+            break;
+        }
         default: {
             throw "VM Error: CommandType not matched";
         }

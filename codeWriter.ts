@@ -344,6 +344,60 @@ export class CodeWriter {
         }
     }
 
+    writeInit() {
+        // Initialise SP to 256
+        this.writeToFile([
+            "@256",
+            "D=A",
+            "@SP",
+            "M=D",
+        ])
+
+        // Call sys.init function
+        this.writeCall("sys.init", 0);
+    }
+
+    writeLabel(label: string) {
+        this.writeToFile([
+            "(" + label + ")"
+        ])
+
+        //TODO: THIS MUST BE LIMITED TO THE SCOPE OF THE FUNCTION - CLASSNAME.FUNCTIONNAME_LABEL ?
+    }
+
+    writeGoto(label: string) {
+        this.writeToFile([
+            "@" + label,
+            "0;JMP"
+        ])
+
+        //TODO - MUST REFER TO FUNCTION SCOPED LABEL
+    }
+
+    writeIf(label: string) {
+        this.writeToFile([
+            "@SP",
+            "M=M-1",
+            "A=M",
+            "D=M",
+            "@" + label,
+            "D;JNE"  //jump if not equal to zero
+        ])
+        //TODO - MUST REFER TO FUNCTION SCOPED LABEL
+    }
+
+    writeCall(functionName: string, numArgs: number) {
+
+    }
+
+    writeReturn() {
+
+    }
+
+    writeFunction(functionName: string, numLocals: number) {
+
+    }
+
     close(){
 
         // Write infinite loop as standard way to terminate hack programs

@@ -33,6 +33,7 @@ var Parser = /** @class */ (function () {
     };
     Parser.prototype.commandType = function () {
         switch (this.commandArray[0]) {
+            // Arithmetic commands
             case "add": return "C_ARITHMETIC";
             case "sub": return "C_ARITHMETIC";
             case "neg": return "C_ARITHMETIC";
@@ -42,10 +43,14 @@ var Parser = /** @class */ (function () {
             case "and": return "C_ARITHMETIC";
             case "or": return "C_ARITHMETIC";
             case "not": return "C_ARITHMETIC";
+            // Memory access commands
             case "push": return "C_PUSH";
             case "pop": return "C_POP";
+            // Program flow commands
             case "goto": return "C_GOTO";
-            case "if": return "C_IF";
+            case "if-goto": return "C_IF";
+            case "label": return "C_LABEL";
+            // Function commands
             case "function": return "C_FUNCTION";
             case "return": return "C_RETURN";
             case "call": return "C_CALL";
