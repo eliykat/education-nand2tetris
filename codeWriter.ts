@@ -3,8 +3,9 @@ const fs = require('fs');
 export class CodeWriter {
 
     output: string;
-    name: string;
+    current_class: string;
     counter: number = 0;
+    current_function: string = "default";
 
     setFileName(filename: string){
 
@@ -223,7 +224,7 @@ export class CodeWriter {
             case "static": {
                 // Static segment approximates fixed variables (e.g. @i)
                 // So we create a unique variable name using the input filename + index number
-                segment_asm = this.name + "." + index;
+                segment_asm = this.current_class + "." + index;
                 break;
             }
             default: {
@@ -359,19 +360,16 @@ export class CodeWriter {
 
     writeLabel(label: string) {
         this.writeToFile([
-            "(" + label + ")"
+            "(" + this.current_class + "." + this.current_function + "_" + label + ")"
         ])
-
-        //TODO: THIS MUST BE LIMITED TO THE SCOPE OF THE FUNCTION - CLASSNAME.FUNCTIONNAME_LABEL ?
     }
 
     writeGoto(label: string) {
+        //NB: this label is function scoped - so not suitable for all purposes (e.g. transferring control between functions)
         this.writeToFile([
-            "@" + label,
+            "@" + this.current_class + "." + this.current_function + "_" + label,
             "0;JMP"
         ])
-
-        //TODO - MUST REFER TO FUNCTION SCOPED LABEL
     }
 
     writeIf(label: string) {
@@ -380,22 +378,127 @@ export class CodeWriter {
             "M=M-1",
             "A=M",
             "D=M",
-            "@" + label,
+            "@" + this.current_class + "." + this.current_function + "_" + label,
             "D;JNE"  //jump if not equal to zero
         ])
-        //TODO - MUST REFER TO FUNCTION SCOPED LABEL
     }
 
     writeCall(functionName: string, numArgs: number) {
 
+        // Push return address
+        this.writePushPop('push', 'constant', functionName + this.counter + ".return");
+
+        // Push LCL pointer value
+        this.writePushPop('push', 'constant', 'LCL');
+
+        // Push ARG pointer value
+        this.writePushPop('push', 'constant', 'ARG');
+
+        // Push this pointer value
+        this.writePushPop('push', 'constant', 'THIS');
+
+        // Push that pointer value
+        this.writePushPop('push', 'constant', 'THAT');
+
+        this.writeToFile([
+            // Reposition ARG pointer to SP - numArgs - 5
+            "@SP",
+            "D=A",
+            "@" + (numArgs + 5),
+            "D=D-A",
+            "@ARG",
+            "M=D",
+            // Reposition LCL pointer to top of stack
+            "@SP",
+            "D=A",
+            "@LCL",
+            "M=D",
+            // Transfer control to the called function
+            "@" + functionName,
+            "0;JMP",
+            // Declare label for return address (this uses the counter to ensure it is unique)
+            "(" + functionName + this.counter + ".return)"
+        ])
     }
 
     writeReturn() {
 
+        this.writeToFile([
+            "// Return from function " + this.current_function,
+            // FRAME is a temporary variable to keep track of where we are as we pop from the global stack around us
+            "@LCL",
+            "D=M",
+            "@FRAME" +  this.counter,    // MAKE UNIQUE
+            "M=D",
+            // Put the return address in a temp var. RET = *(FRAME - 5)
+            // NB: FRAME pointer already in D register
+            "@5",
+            "A=D-A",
+            "D=M",
+            "@RET"  + this.counter,     // MAKE UNIQUE
+            "M=D"
+        ])
+
+        // Pop from the top of the stack (the return argument) to argument[0] (which will become the top of the caller frame shortly)
+        this.writePushPop('pop', 'argument', '0');
+        
+        this.writeToFile([
+            // Restore SP of the caller (ARG + 1)
+            "@ARG",
+            "D=M+1",
+            "@SP",
+            "M=D",
+            // Return THAT of the caller
+            "@FRAME" + this.counter,
+            "A=M-1",
+            "D=M",
+            "@THAT",
+            "M=D",
+            // Return THIS of the caller
+            "@FRAME" + this.counter,
+            "A=M-1",
+            "A=A-1",
+            "D=M",
+            "@THIS",
+            "M=D",
+            // Restore ARG of the caller
+            "@FRAME" + this.counter,
+            "A=M-1",
+            "A=A-1",
+            "A=A-1",
+            "D=M",
+            "@ARG",
+            "M=D",
+            // Restore LCL of the caller
+            "@FRAME" + this.counter,
+            "A=M-1",
+            "A=A-1",
+            "A=A-1",
+            "A=A-1",
+            "D=M",
+            "@LCL",
+            "M=D",
+            // Transfer control back to the caller
+            "@RET" + this.counter,
+            "A=M",
+            "0;JMP"
+        ])
     }
 
     writeFunction(functionName: string, numLocals: number) {
+        // Let the object know which function we're in - used for function-scoped labels
+        this.current_function = functionName;
 
+        // Label for function entry
+        this.writeToFile([
+            "// START OF " + functionName,
+            "(" + functionName + ")"
+        ])
+
+        // Initialise local variables to 0
+        for (let i = 0; i < numLocals; i++) {
+            this.writePushPop('push', 'constant', '0');
+        }
     }
 
     close(){
@@ -417,7 +520,7 @@ export class CodeWriter {
 
     constructor(output: string){
         this.output = output;
-        this.name = output.slice(output.lastIndexOf("\\") + 1, output.lastIndexOf("."));   // This is inefficient but will likely be replaced later once I figure out how to parse an entire directory
+        this.current_class = output.slice(output.lastIndexOf("\\") + 1, output.lastIndexOf("."));   // This is inefficient but will likely be replaced later once I figure out how to parse an entire directory
         fs.writeFileSync(this.output, "// Translation of " + this.output + " to ASM \n");
     }
 }

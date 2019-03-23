@@ -35,6 +35,18 @@ do {
             codeWriter.writeLabel(parser.arg1());
             break;
         }
+        case "C_FUNCTION": {
+            codeWriter.writeFunction(parser.arg1(), Number(parser.arg2()));
+            break;
+        }
+        case "C_RETURN": {
+            codeWriter.writeReturn();
+            break;
+        }
+        case "C_CALL": {
+            codeWriter.writeCall(parser.arg1(), Number(parser.arg2()));
+            break;
+        }
         default: {
             throw "VM Error: CommandType not matched";
         }
