@@ -66,29 +66,38 @@ export class Parser {
         return this.commandArray[2];
     }
 
-    ignoreLine(line: string) {
-        // Returns true if a string is a comment or blank/empty line
-
-        if ( line.search(/^\s*\/\//) > -1 || line.search(/^\s*$/) > -1 || line.search(/^\n$/) > -1 ) {
-            return true;
-        }
-
-        return false;
-    }
-
     constructor(filename: string) {
 
         var input_file = fs.readFileSync(filename);
         var dirty_input = input_file.toString().split("\n");
         let trimmed: string;
+        let comment: number;
 
         for (var i = 0; i < dirty_input.length; i++) {
-            if (!this.ignoreLine(dirty_input[i])) {
 
-                trimmed = dirty_input[i].trim();
+            // Remove whitespace at start and end of line
+            trimmed = dirty_input[i].trim();
 
-                this.input.push(trimmed);
+            // Skip if line is empty
+            if (trimmed.length < 1) continue;
+
+            // Check for double forwardslash, indicating that line is a comment
+            comment = trimmed.indexOf("//");
+
+            if (comment > -1) {
+                
+                // Skip whole line if comment is at the start
+                if (comment == 0) continue;
+
+                // Assume the comment is at the end of a command - drop the comment only
+                trimmed = trimmed.slice(0, comment);
             }
+
+            // Remove whitespace at start and end of line (again)
+            trimmed = trimmed.trim();
+            
+            // Push onto cleaned up input
+            this.input.push(trimmed);
         }
 
         console.log("Successfully loaded " + filename + " for compiling.")

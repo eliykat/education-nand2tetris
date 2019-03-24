@@ -8,7 +8,7 @@
             "name": "Current TS file",
             "type": "node",
             "request": "launch",
-            "args": ["${relativeFile}", "..\\07\\StackArithmetic\\StackTest\\StackTest.vm"],
+            "args": ["${relativeFile}", "..\\08\\FunctionCalls\\FibonacciElement\\"],
             "runtimeArgs": ["--nolazy", "-r", "ts-node/register"],
             "sourceMaps": true,
             "cwd": "${workspaceRoot}",

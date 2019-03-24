@@ -6,10 +6,15 @@ var CodeWriter = /** @class */ (function () {
         this.counter = 0;
         this.current_function = "default";
         this.output = output;
-        this.current_class = output.slice(output.lastIndexOf("\\") + 1, output.lastIndexOf(".")); // This is inefficient but will likely be replaced later once I figure out how to parse an entire directory
-        fs.writeFileSync(this.output, "// Translation of " + this.output + " to ASM \n");
+        fs.writeFileSync(this.output, ""); // New empty file to append to
     }
     CodeWriter.prototype.setFileName = function (filename) {
+        this.writeToFile([
+            "// ----------------------------------------------------",
+            "// COMMENCE FILE: " + filename,
+            "// ----------------------------------------------------",
+        ]);
+        this.current_class = filename;
     };
     CodeWriter.prototype.writeArithmetic = function (command) {
         // Increment the unique counter by 1,
@@ -322,13 +327,21 @@ var CodeWriter = /** @class */ (function () {
     CodeWriter.prototype.writeInit = function () {
         // Initialise SP to 256
         this.writeToFile([
+            "// INITIALIZE VM",
             "@256",
             "D=A",
             "@SP",
-            "M=D",
+            "M=D"
         ]);
         // Call sys.init function
-        this.writeCall("sys.init", 0);
+        this.writeCall("Sys.init", 0);
+        // Write infinite loop as standard way to terminate hack programs
+        this.writeToFile([
+            "// TERMINATE PROGRAM (sys.init should do this, but just in case)",
+            "(END)",
+            "@END",
+            "0;JMP"
+        ]);
     };
     CodeWriter.prototype.writeLabel = function (label) {
         this.writeToFile([
@@ -353,27 +366,52 @@ var CodeWriter = /** @class */ (function () {
         ]);
     };
     CodeWriter.prototype.writeCall = function (functionName, numArgs) {
+        this.writeToFile(["// CALL FUNCTION " + functionName]);
         // Push return address
         this.writePushPop('push', 'constant', functionName + this.counter + ".return");
-        // Push LCL pointer value
-        this.writePushPop('push', 'constant', 'LCL');
-        // Push ARG pointer value
-        this.writePushPop('push', 'constant', 'ARG');
-        // Push this pointer value
-        this.writePushPop('push', 'constant', 'THIS');
-        // Push that pointer value
-        this.writePushPop('push', 'constant', 'THAT');
         this.writeToFile([
+            // Push LCL pointer value
+            "@LCL",
+            "D=M",
+            "@SP",
+            "A=M",
+            "M=D",
+            "@SP",
+            "M=M+1",
+            // Push ARG pointer value
+            "@ARG",
+            "D=M",
+            "@SP",
+            "A=M",
+            "M=D",
+            "@SP",
+            "M=M+1",
+            // Push this pointer value
+            "@THIS",
+            "D=M",
+            "@SP",
+            "A=M",
+            "M=D",
+            "@SP",
+            "M=M+1",
+            // Push that pointer value
+            "@THAT",
+            "D=M",
+            "@SP",
+            "A=M",
+            "M=D",
+            "@SP",
+            "M=M+1",
             // Reposition ARG pointer to SP - numArgs - 5
             "@SP",
-            "D=A",
+            "D=M",
             "@" + (numArgs + 5),
             "D=D-A",
             "@ARG",
             "M=D",
             // Reposition LCL pointer to top of stack
             "@SP",
-            "D=A",
+            "D=M",
             "@LCL",
             "M=D",
             // Transfer control to the called function
@@ -385,7 +423,7 @@ var CodeWriter = /** @class */ (function () {
     };
     CodeWriter.prototype.writeReturn = function () {
         this.writeToFile([
-            "// Return from function " + this.current_function,
+            "// RETURN FROM FUNCTION " + this.current_function,
             // FRAME is a temporary variable to keep track of where we are as we pop from the global stack around us
             "@LCL",
             "D=M",
@@ -448,7 +486,7 @@ var CodeWriter = /** @class */ (function () {
         this.current_function = functionName;
         // Label for function entry
         this.writeToFile([
-            "// START OF " + functionName,
+            "// DECLARING FUNCTION " + functionName,
             "(" + functionName + ")"
         ]);
         // Initialise local variables to 0
@@ -457,13 +495,8 @@ var CodeWriter = /** @class */ (function () {
         }
     };
     CodeWriter.prototype.close = function () {
-        // Write infinite loop as standard way to terminate hack programs
-        this.writeToFile([
-            "// End loop",
-            "(END)",
-            "@END",
-            "0;JMP"
-        ]);
+        // Nothing really to do given the way I have opened the file
+        // DEBUG ONLY: STRIP ALL OF MY OWN COMMENTS SO I CAN SEE CORRECT LINE NUMBERING
     };
     CodeWriter.prototype.writeToFile = function (command) {
         for (var i = 0; i < command.length; i++) {
