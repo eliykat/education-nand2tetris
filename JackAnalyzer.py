@@ -11,8 +11,11 @@ def main():
 
     tokenizer = JackTokenizer(input)
 
-    while True:
+    while tokenizer.hasMoreTokens():
         tokenizer.advance()
+        print(tokenizer.token)
+
+    tokenizer.close()
     
 
 if __name__ == '__main__':

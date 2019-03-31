@@ -51,43 +51,52 @@ class JackTokenizer:
     def __init__(self, input):
         # Constructor - opens input file/stream and gets ready to tokenize it
         self.input = open(input)
+
+        print("Opened " + input + " for tokenizing")
+
         self.nextLine()
 
     def hasMoreTokens(self):
         # Returns true if there are more tokens in input
 
-        # here's how you do this
-        # save the cursor position in the file - this will be the start of the current line.
-        # save self.line - this will be the current line (partially consumed)
-        # then run getChar until we EITHER hit EOF (return false) or a valid char (return true)
-        # then restore the cursor and self.line
-
-        pass
+        if self.getChar() is not None:
+            return True
+        else:
+            return False
 
     def getChar(self):
         """ Disposes of garbage in self.line and returns first valid char for analysis.
         Will not move past a valid char. """
 
+        # print(repr(self.line))
+        
+        # Test for EOF (indicated by empty string without newline char)
+        if not self.line and "\n" not in self.line:
+            return None
+
         # If line is empty or commented, move to the next line and try again
-        if len(self.line) == 0 or self.line[0:2] == "//":
+        elif self.line == "\n" or self.line[0:2] == "//":
             self.nextLine()
-            self.getChar()
+            return self.getChar()
 
         # If start of block comment, search for the end of the comment and try again
-        if self.line[0:2] == "/*":
-            while self.line.find("*/") == -1:
+        elif self.line[0:2] == "/*":
+            while "*/" not in self.line:
                 self.nextLine()
 
             # move one line past the end of the comment
             self.nextLine()
 
-        # If char is space, remove it and try again
-        if self.line[0] == " ":
-            self.line = self.line[1:]
-            self.getChar()
+            return self.getChar()
 
-        # Return valid char for analysis
-        return self.line[0]
+        # If char is space, remove it and try again
+        elif self.line[0] == " ":
+            self.line = self.line[1:]
+            return self.getChar()
+
+        # Base case - this is a valid char to pass up the chain
+        else:
+            return self.line[0]
 
     def advance(self):
         # Gets the next token from input and stores in self.token
@@ -155,4 +164,8 @@ class JackTokenizer:
 
     def nextLine(self):
         """Read next line in file"""
-        self.line = self.input.readline().strip()
+        self.line = self.input.readline().strip(' ')
+
+    def close(self):
+        self.input.close()
+        print("Tokenizing finished.")
