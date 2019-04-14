@@ -1,6 +1,6 @@
 import sys
 import os
-from JackTokenizer import JackTokenizer
+from CompilationEngine import CompilationEngine
 
 def main():
     try:
@@ -9,14 +9,9 @@ def main():
         print("Error: you must supply a file for analyzing")
         sys.exit()
 
-    tokenizer = JackTokenizer(input)
+    output = input[:input.rfind('.')] + '.xml'
 
-    while tokenizer.hasMoreTokens():
-        tokenizer.advance()
-        print(tokenizer.token)
-
-    tokenizer.close()
-    
+    CompilationEngine(input, output)
 
 if __name__ == '__main__':
     main()

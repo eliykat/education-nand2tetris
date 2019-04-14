@@ -1,5 +1,13 @@
 import sys
 
+class TokenTypeError(Exception):
+    """Exception if an illegal token is encountered"""
+    def __init__(self, expected, received, token, lineNo):
+        self.expected = expected
+        self.received = received
+        self.token = token
+        self.lineNo = lineNo
+
 class JackTokenizer:
 
     symbols = [
@@ -51,6 +59,7 @@ class JackTokenizer:
     def __init__(self, input):
         # Constructor - opens input file/stream and gets ready to tokenize it
         self.input = open(input)
+        self.lineNo = 0
 
         print("Opened " + input + " for tokenizing")
 
@@ -131,10 +140,10 @@ class JackTokenizer:
 
     def tokenType(self):
         # Returns the type of the current token
-        if self.token.upper() in JackTokenizer.keywords:
+        if self.token.lower() in JackTokenizer.keywords:
             return 'KEYWORD'
         elif self.token in JackTokenizer.symbols:
-            return 'SYMBOL',
+            return 'SYMBOL'
         elif self.token[0] == '"' and self.token[len(self.token)] == '"':
             return 'STRING_CONST'
         elif self.token.isnumeric():
@@ -144,27 +153,44 @@ class JackTokenizer:
 
     def keyWord(self):
         # Returns the keyword which is the current token (only if tokenType() == keyword)
-        return self.token.upper()
+        if self.tokenType() == 'KEYWORD':
+            return self.token.upper()
+        else:
+            raise TokenTypeError('KEYWORD', self.tokenType(), self.token, self.lineNo)
 
     def symbol(self):
         # Returns the character which is the current token (only if tokenType() == symbol)
-        return self.token
+        if self.tokenType() == 'SYMBOL':
+            return self.token
+        else:
+            raise TokenTypeError('SYMBOL', self.tokenType(), self.token, self.lineNo)
 
     def identifier(self):
         # Returns the identifier which is the current token (only if tokenType() == identifier)
-        return self.token
+        if self.tokenType() == 'IDENTIFIER':
+            return self.token
+        else:
+            raise TokenTypeError('IDENTIFIER', self.tokenType(), self.token, self.lineNo)
 
     def intVal(self):
         # Returns the integer value of the current token (only if tokenType() == int_const)
-        return self.token
+        if self.tokenType() == 'INT_CONST':
+            return self.token
+        else:
+            raise TokenTypeError('INT_CONST', self.tokenType(), self.token, self.lineNo)
 
     def stringVal(self):
         # Returns the string value of the current token, without double quotes (only if tokenType() = string_const)
-        return self.token[1:len(self.token) - 1]
+        if self.tokenType() == 'STRING_CONST':
+            return self.token[1:len(self.token) - 1]
+        else:
+            raise TokenTypeError('STRING_CONST', self.tokenType(), self.token, self.lineNo)
 
     def nextLine(self):
         """Read next line in file"""
         self.line = self.input.readline().strip(' ')
+        print('Reading line: ' + self.line)
+        self.lineNo += 1
 
     def close(self):
         self.input.close()
