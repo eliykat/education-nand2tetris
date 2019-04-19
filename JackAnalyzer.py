@@ -9,7 +9,7 @@ def main():
         print("Error: you must supply a file for analyzing")
         sys.exit()
 
-    output = input[:input.rfind('.')] + '.xml'
+    output = input[:input.rfind('.')] + '-mine.xml'
 
     CompilationEngine(input, output)
 

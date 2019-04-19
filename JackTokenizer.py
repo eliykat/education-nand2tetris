@@ -1,12 +1,5 @@
 import sys
-
-class TokenTypeError(Exception):
-    """Exception if an illegal token is encountered"""
-    def __init__(self, expected, received, token, lineNo):
-        self.expected = expected
-        self.received = received
-        self.token = token
-        self.lineNo = lineNo
+from TokenTypeError import TokenTypeError
 
 class JackTokenizer:
 
@@ -29,7 +22,7 @@ class JackTokenizer:
         '<',
         '>',
         '=',
-        # Omitted - maybe an em dash - last character unknown, see p 246 of pdf
+        '~'
     ]
 
     keywords = [
@@ -74,7 +67,7 @@ class JackTokenizer:
             return False
 
     def getChar(self):
-        """ Disposes of garbage in self.line and returns first valid char for analysis.
+        """ Disposes of garbage in self.line and returns first valid char for analysis (being a char that belongs to a token).
         Will not move past a valid char. """
 
         # print(repr(self.line))
@@ -130,13 +123,32 @@ class JackTokenizer:
         elif testChar in JackTokenizer.symbols:
             tokenEnd = 1
 
+        elif testChar == '"':
+            tokenEnd = self.line.index('"', 1) + 1
+        
         else:
             print('Error - invalid token')
-            print(self.line)
+            print(self.lineNo)
+            print('"' + self.line + '"')
             sys.exit()
 
         self.token = self.line[:tokenEnd]
         self.line = self.line[tokenEnd:]
+
+    def lookAhead(self):
+        # Returns the next token without advancing
+        # Created to solve challenges with CompilationEngine.compileTerm()
+
+        currentLine = self.line
+        currentToken = self.token
+
+        self.advance()
+        nextToken = self.token
+
+        self.line = currentLine
+        self.token = currentToken
+
+        return nextToken
 
     def tokenType(self):
         # Returns the type of the current token
@@ -144,7 +156,7 @@ class JackTokenizer:
             return 'KEYWORD'
         elif self.token in JackTokenizer.symbols:
             return 'SYMBOL'
-        elif self.token[0] == '"' and self.token[len(self.token)] == '"':
+        elif self.token[0] == '"':
             return 'STRING_CONST'
         elif self.token.isnumeric():
             return 'INT_CONST'
@@ -157,6 +169,10 @@ class JackTokenizer:
             return self.token.upper()
         else:
             raise TokenTypeError('KEYWORD', self.tokenType(), self.token, self.lineNo)
+
+        # Type checking disabled because it includes user-defined classes, which I am not dealing with at this stage
+
+        # return self.token.upper()
 
     def symbol(self):
         # Returns the character which is the current token (only if tokenType() == symbol)
@@ -187,9 +203,10 @@ class JackTokenizer:
             raise TokenTypeError('STRING_CONST', self.tokenType(), self.token, self.lineNo)
 
     def nextLine(self):
-        """Read next line in file"""
-        self.line = self.input.readline().strip(' ')
-        print('Reading line: ' + self.line)
+        """Read next line in file, stripped of spaces and tabs"""
+
+        # Note that this may not work if there are spaces and tabs interspersed
+        self.line = self.input.readline().strip(' ').strip('\t')
         self.lineNo += 1
 
     def close(self):
