@@ -1,6 +1,7 @@
 from JackTokenizer import JackTokenizer
 from lxml import etree
 from TokenTypeError import TokenTypeError
+from SymbolTable import SymbolTable
 
 class CompilationEngine():
 
@@ -10,6 +11,7 @@ class CompilationEngine():
         self.input = input
         self.output = open(output, 'w')
         self.tokenizer = JackTokenizer(input)
+        self.symbolTable = SymbolTable()
 
         self.tokenizer.advance()
 
@@ -23,8 +25,8 @@ class CompilationEngine():
             result.text = self.tokenizer.keyWord().lower()
         elif _tag == 'symbol':
             result.text = self.tokenizer.symbol()
-        elif _tag == 'identifier':
-            result.text = self.tokenizer.identifier()
+        # elif _tag == 'identifier':
+        #     result.text = self.tokenizer.identifier()
         elif _tag == 'integerConstant':
             result.text = self.tokenizer.intVal()
         elif _tag == 'stringConstant':
@@ -33,6 +35,26 @@ class CompilationEngine():
         #     result.text = '' # Force empty tags - for compatibility with comparison file
 
         return result
+
+    def subTagIdentifier(self, name, category, new, kind, index):
+        self.pointer = self.subTag('identifier')
+
+        # Name
+        etree.SubElement(self.pointer, 'name').text = name
+
+        # Category: var, argument, static, field, class, subroutine
+        etree.SubElement(self.pointer, 'category').text = category
+
+        # Is it newly defined? Boolean
+        etree.SubElement(self.pointer, 'new').text = new
+
+        # Kind: var, argument, static, field (if applicable)
+        etree.SubElement(self.pointer, 'kind').text = kind
+
+        # Index: unique index
+        etree.SubElement(self.pointer, 'index').text = str(index)
+
+        self.pointer = self.pointer.getparent()
     
     def compileClass(self):
         # Current token assumed to be the CLASS keyword
@@ -42,17 +64,24 @@ class CompilationEngine():
 
         # Keyword: class
         self.subTag('keyword')
+        self.tokenizer.advance()
 
         # Identifier: class name
+        # Classes are not entered into symboltable
+        self.subTagIdentifier(
+            self.tokenizer.identifier(),
+            'CLASS',
+            'TRUE',
+            'NONE',
+            'NONE'
+        )
         self.tokenizer.advance()
-        self.subTag('identifier')
 
         # Symbol: {
-        self.tokenizer.advance()
         self.subTag('symbol')
+        self.tokenizer.advance()
 
         # classVarDec or Subroutine
-        self.tokenizer.advance()
         while not self.tokenizer.token == '}':      # Access token directly to circumvent error checking
             if self.tokenizer.keyWord() in ['STATIC', 'FIELD']:
                 self.compileClassVarDec()
@@ -97,25 +126,58 @@ class CompilationEngine():
 
         # Keyword: STATIC or FIELD
         self.subTag('keyword')
+        self.tokenizer.advance()
 
         # Keyword: type | identifier (if class)
-        self.tokenizer.advance()
         try:
-            self.tokenizer.keyWord()
+            _type = self.tokenizer.keyWord()
             self.subTag('keyword')
         except TokenTypeError:
-            self.subTag('identifier')
+            _type = self.tokenizer.identifier()
+            self.subTagIdentifier(
+                self.tokenizer.identifier(),
+                'CLASS',
+                'FALSE',
+                self.symbolTable.kindOf(self.tokenizer.identifier()),
+                self.symbolTable.indexOf(self.tokenizer.identifier())
+            )
+        self.tokenizer.advance()
 
         # Identifier: varName
+        # Declare in symboltable
+        self.symbolTable.define(
+            self.tokenizer.identifier(),
+            _type,
+            'FIELD'
+        )
+        self.subTagIdentifier(
+            self.tokenizer.identifier(),
+            'FIELD',
+            'TRUE',
+            _type,
+            self.symbolTable.indexOf(self.tokenizer.identifier())
+        )
         self.tokenizer.advance()
-        self.subTag('identifier')
 
         # Compile any other varDecs on the same line (of the same type)
-        self.tokenizer.advance()
         while self.tokenizer.symbol() == ',':
             self.subTag('symbol')
             self.tokenizer.advance()
-            self.subTag('identifier')
+            
+            # Identifier: varName
+            # Declare in symboltable
+            self.symbolTable.define(
+                self.tokenizer.identifier(),
+                _type,
+                'FIELD'
+            )
+            self.subTagIdentifier(
+                self.tokenizer.identifier(),
+                'FIELD',
+                'TRUE',
+                _type,
+                self.symbolTable.indexOf(self.tokenizer.identifier())
+            )
             self.tokenizer.advance()
 
         # Symbol: ;
@@ -128,6 +190,9 @@ class CompilationEngine():
 
     def compileSubroutine(self):
         # Current token assumed to be keyword: constructor | function | method | void | <type>
+
+        # Create new subroutine scoped symbol table
+        self.symbolTable.startSubroutine()
     
         # Create XML element and move pointer
         self.pointer = self.subTag('subroutineDec')
@@ -141,11 +206,23 @@ class CompilationEngine():
             self.tokenizer.keyWord()
             self.subTag('keyword')
         except TokenTypeError:
-            self.subTag('identifier')
+            self.subTagIdentifier(
+                self.tokenizer.identifier(),
+                'CLASS',
+                'FALSE',
+                'NONE',
+                'NONE'
+            )
 
         # Identifier: subroutineName
         self.tokenizer.advance()
-        self.subTag('identifier')
+        self.subTagIdentifier(
+            self.tokenizer.identifier(),
+            'SUBROUTINE',
+            'TRUE',
+            'NONE',
+            'NONE'
+        )
 
         # Symbol: (
         self.tokenizer.advance()
@@ -202,12 +279,24 @@ class CompilationEngine():
                     self.tokenizer.advance()
                 
                 # Keyword: type
+                _type = self.tokenizer.keyWord()
                 self.subTag('keyword')
                 self.tokenizer.advance()
 
                 # Identifier: varName
-                
-                self.subTag('identifier')
+                # Declare in symboltable
+                self.symbolTable.define(
+                    self.tokenizer.identifier(),
+                    _type,
+                    'ARG'
+                )
+                self.subTagIdentifier(
+                    self.tokenizer.identifier(),
+                    'ARGUMENT',
+                    'TRUE',
+                    _type,
+                    self.symbolTable.indexOf(self.tokenizer.keyWord())
+                )
                 self.tokenizer.advance()
 
                 run_once = False
@@ -227,22 +316,52 @@ class CompilationEngine():
 
         # Keyword: type | identifier (if class)
         try:
-            self.tokenizer.keyWord()
+            _category = self.tokenizer.keyWord()
             self.subTag('keyword')
         except TokenTypeError:
-            self.subTag('identifier')
+            _category = 'CLASS'
+            self.subTagIdentifier(
+                self.tokenizer.identifier(),
+                'CLASS',
+                'FALSE',
+                'NONE',
+                'NONE'
+            )
+        finally:
+            self.tokenizer.advance()
 
         # Identifier: varName
-        self.tokenizer.advance()
-        self.subTag('identifier')
-
+        ## USING SYMBOLTABLE
+        # Define in symboltable
+        self.symbolTable.define(
+            self.tokenizer.identifier(),
+            _category,
+            'VAR')
+        self.subTagIdentifier(
+            self.tokenizer.identifier(),
+            'VAR',
+            'TRUE',
+            'VAR',
+            self.symbolTable.indexOf( self.tokenizer.identifier() )
+        )
         self.tokenizer.advance()
 
         # Further varNames
         while self.tokenizer.symbol() == ',':
             self.subTag('symbol')
             self.tokenizer.advance()
-            self.subTag('identifier')
+            
+            self.symbolTable.define(
+                self.tokenizer.identifier(),
+                _category,
+                'VAR')
+            self.subTagIdentifier(
+                self.tokenizer.identifier(),
+                'VAR',
+                'TRUE',
+                'VAR',
+                self.symbolTable.indexOf( self.tokenizer.identifier() )
+            )
             self.tokenizer.advance()
 
         # Symbol: ;
@@ -283,7 +402,22 @@ class CompilationEngine():
         # As per page 211, this is not supposed to be its own sub-tree
 
         # Identifier: subroutineName or (className | varName)
-        self.subTag('identifier')
+        if self.tokenizer.lookAhead() == '.':
+            self.subTagIdentifier(
+                self.tokenizer.identifier(),
+                'CLASS',
+                'FALSE',
+                self.symbolTable.kindOf(self.tokenizer.identifier()),
+                self.symbolTable.indexOf(self.tokenizer.identifier())
+            )
+        else:
+            self.subTagIdentifier(
+                self.tokenizer.identifier(),
+                'SUBROUTINE',
+                'FALSE',
+                self.symbolTable.kindOf(self.tokenizer.identifier()),
+                self.symbolTable.indexOf(self.tokenizer.identifier())
+            )
 
         # Symbol: . or (
         self.tokenizer.advance()
@@ -293,7 +427,13 @@ class CompilationEngine():
         if self.tokenizer.symbol() == ".":
             # Identifier: subroutineName
             self.tokenizer.advance()
-            self.subTag('identifier')
+            self.subTagIdentifier(
+                    self.tokenizer.identifier(),
+                    'SUBROUTINE',
+                    'FALSE',
+                    self.symbolTable.kindOf(self.tokenizer.identifier()),
+                    self.symbolTable.indexOf(self.tokenizer.identifier())
+                )
 
             # Symbol: (
             self.tokenizer.advance()
@@ -328,37 +468,41 @@ class CompilationEngine():
 
         # Keyword: let
         self.subTag('keyword')
+        self.tokenizer.advance()
 
         # identifier: varName
+        self.subTagIdentifier(
+            self.tokenizer.identifier(),
+            self.symbolTable.kindOf(self.tokenizer.identifier()),
+            'FALSE',
+            self.symbolTable.kindOf(self.tokenizer.identifier()),
+            self.symbolTable.indexOf(self.tokenizer.identifier())
+        )
         self.tokenizer.advance()
-        self.subTag('identifier')
 
         # index if applicable
-        self.tokenizer.advance()
         if self.tokenizer.symbol() == '[':
             
             # Symbol: [
             self.subTag('symbol')
+            self.tokenizer.advance()
 
             # Expression
-            self.tokenizer.advance()
             self.compileExpression()
 
             # Symbol: ]
             self.subTag('symbol')
-
             self.tokenizer.advance()
 
         # Symbol: =
         self.subTag('symbol')
-
-        # Expression
         self.tokenizer.advance()
+
+        # Expression 
         self.compileExpression()
 
         # Symbol: ;
         self.subTag('symbol')
-
         self.tokenizer.advance()
 
         self.pointer = self.pointer.getparent()
@@ -511,7 +655,13 @@ class CompilationEngine():
                 # varName[expression]
 
                 # Identifier: varName
-                self.subTag('identifier')
+                self.subTagIdentifier(
+                    self.tokenizer.identifier(),
+                    'VAR',
+                    'FALSE',
+                    self.symbolTable.kindOf(self.tokenizer.identifier()),
+                    self.symbolTable.indexOf(self.tokenizer.identifier())
+                )
                 self.tokenizer.advance()
 
                 # Symbol: [
@@ -531,7 +681,13 @@ class CompilationEngine():
 
             else:
                 # Identifier: varName
-                self.subTag('identifier')
+                self.subTagIdentifier(
+                    self.tokenizer.identifier(),
+                    'VAR',
+                    'FALSE',
+                    self.symbolTable.kindOf(self.tokenizer.identifier()),
+                    self.symbolTable.indexOf(self.tokenizer.identifier())
+                )
                 self.tokenizer.advance()
             
         elif self.tokenizer.symbol() == '(':
