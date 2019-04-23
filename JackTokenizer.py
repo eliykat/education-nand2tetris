@@ -135,6 +135,11 @@ class JackTokenizer:
         self.token = self.line[:tokenEnd]
         self.line = self.line[tokenEnd:]
 
+    def rawToken(self):
+        """Return the token without type checking"""
+        
+        return self.token
+    
     def lookAhead(self):
         # Returns the next token without advancing
         # Created to solve challenges with CompilationEngine.compileTerm()

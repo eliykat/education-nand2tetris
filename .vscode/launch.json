@@ -12,12 +12,12 @@
             "console": "integratedTerminal"
         },
         {
-            "name": "Python: JackAnalyzer - Square",
+            "name": "Python: JackCompiler",
             "type": "python",
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "args": ["..\\10\\Square\\Square.jack"]
+            "args": ["..\\11\\ConvertToBin\\Main.jack"]
         },
         {
             "name": "Python: Remote Attach",

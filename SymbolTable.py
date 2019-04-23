@@ -8,8 +8,8 @@ class SymbolTable:
         self.indexCount = {
             'STATIC': 0,
             'FIELD': 0,
-            'ARG': 0,
-            'VAR': 0
+            'ARGUMENT': 0,
+            'LOCAL': 0
         }
 
     def startSubroutine(self):
@@ -18,15 +18,15 @@ class SymbolTable:
         self.subroutineScope = {}
 
         # Reset indexCount for subroutine scoped variables
-        self.indexCount['ARG'] = 0
-        self.indexCount['VAR'] = 0
+        self.indexCount['ARGUMENT'] = 0
+        self.indexCount['LOCAL'] = 0
 
     def define(self, _name, _type, _kind):
         if _kind == 'STATIC' or _kind == 'FIELD':
             # Class scope
             scope = self.classScope
 
-        elif _kind == 'ARG' or _kind == 'VAR':
+        elif _kind == 'ARGUMENT' or _kind == 'LOCAL':
             # Subroutine scope
             scope = self.subroutineScope
 
@@ -45,12 +45,12 @@ class SymbolTable:
     def kindOf(self, _name):
         try:
             if _name in self.subroutineScope:
-                return self.subroutineScope[_name]['kind']
+                return self.subroutineScope[_name]['kind'].lower()
         except AttributeError:
             pass
         
         if _name in self.classScope:
-            return self.classScope[_name]['kind']
+            return self.classScope[_name]['kind'].lower()
 
         else:
             return 'NONE'
