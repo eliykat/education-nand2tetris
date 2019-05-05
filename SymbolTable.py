@@ -53,7 +53,7 @@ class SymbolTable:
             return self.classScope[_name]['kind'].lower()
 
         else:
-            return 'NONE'
+            return None
 
     def typeOf(self, _name):
         try:
@@ -66,7 +66,7 @@ class SymbolTable:
             return self.classScope[_name]['type']
 
         else:
-            return 'NONE'
+            return None
 
     def indexOf(self, _name):
         try:
@@ -79,4 +79,4 @@ class SymbolTable:
             return self.classScope[_name]['index']
 
         else:
-            return 'NONE'
+            return None

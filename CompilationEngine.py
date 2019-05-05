@@ -9,6 +9,9 @@ class CompilationEngine():
     op = ['+', '-', '*', '/', '&', '|', '<', '>', '=']
 
     def __init__(self, input, output):
+
+        print ('Opened ' + input + ' for compiling.')
+
         self.input = input
 
         # Instantiate different modules
@@ -69,31 +72,24 @@ class CompilationEngine():
         self.vmWriter.close()
         self.tokenizer.close()
 
-        print('CompilationEngine complete.')
+        print('Finished compiling ' + self.input + '.')
     
     def compileClassVarDec(self):
         # Current token assumed to be the STATIC or FIELD keyword
 
-        # Create XML tag and move pointer
-        self.pointer = self.subTag('classVarDec')
-
         # Keyword: STATIC or FIELD
-        self.subTag('keyword')
+        if self.tokenizer.keyWord() == 'FIELD':
+            _kind = 'FIELD'
+        elif self.tokenizer.keyWord() == 'STATIC':
+            _kind = 'STATIC'
+            raise NotImplementedError
         self.tokenizer.advance()
 
         # Keyword: type | identifier (if class)
         try:
             _type = self.tokenizer.keyWord()
-            self.subTag('keyword')
         except TokenTypeError:
             _type = self.tokenizer.identifier()
-            self.subTagIdentifier(
-                self.tokenizer.identifier(),
-                'CLASS',
-                'FALSE',
-                self.symbolTable.kindOf(self.tokenizer.identifier()),
-                self.symbolTable.indexOf(self.tokenizer.identifier())
-            )
         self.tokenizer.advance()
 
         # Identifier: varName
@@ -101,20 +97,12 @@ class CompilationEngine():
         self.symbolTable.define(
             self.tokenizer.identifier(),
             _type,
-            'FIELD'
-        )
-        self.subTagIdentifier(
-            self.tokenizer.identifier(),
-            'FIELD',
-            'TRUE',
-            _type,
-            self.symbolTable.indexOf(self.tokenizer.identifier())
+            _kind
         )
         self.tokenizer.advance()
 
         # Compile any other varDecs on the same line (of the same type)
         while self.tokenizer.symbol() == ',':
-            self.subTag('symbol')
             self.tokenizer.advance()
             
             # Identifier: varName
@@ -122,32 +110,21 @@ class CompilationEngine():
             self.symbolTable.define(
                 self.tokenizer.identifier(),
                 _type,
-                'FIELD'
-            )
-            self.subTagIdentifier(
-                self.tokenizer.identifier(),
-                'FIELD',
-                'TRUE',
-                _type,
-                self.symbolTable.indexOf(self.tokenizer.identifier())
+                _kind
             )
             self.tokenizer.advance()
 
         # Symbol: ;
-        self.subTag('symbol')
-
         self.tokenizer.advance()
 
-        # Move pointer back up
-        self.pointer = self.pointer.getparent()       
-
     def compileSubroutine(self):
-        # Current token assumed to be keyword: constructor | function | method | void | <type>
+        # Current token assumed to be keyword: constructor | function | method
 
         # Create new subroutine scoped symbol table
         self.symbolTable.startSubroutine()
 
         # Keyword: constructor | function | method 
+        subroutineKind = self.tokenizer.keyWord()
         self.tokenizer.advance()
 
         # Keyword: void | type | identifier (if class)
@@ -178,7 +155,20 @@ class CompilationEngine():
         # Write vm code function declaration
         # This is done 'late' so that we can get nLocals (noting that varDec() does not actually write vm code)
         self.vmWriter.writeFunction(self.className + '.' + subroutineName, self.symbolTable.varCount('LOCAL'))
-        
+
+        if subroutineKind == 'CONSTRUCTOR':
+            # Alloc() required space (as determined by number of class variables)
+            self.vmWriter.writePush('constant', self.symbolTable.varCount('FIELD'))
+            self.vmWriter.writeCall('Memory.alloc', 1)
+
+            # pop return value of alloc() to THIS (effectively pointing it to start of allocated object memory)
+            self.vmWriter.writePop('pointer', 0)
+
+        elif subroutineKind == 'METHOD':
+            # Set 'this' pointer by pushing first argument and popping to pointer 0
+            self.vmWriter.writePush('argument', 0)
+            self.vmWriter.writePop('pointer', 0)
+
         # subroutineBody: Statements
         self.compileStatements()
 
@@ -271,9 +261,22 @@ class CompilationEngine():
                 raise TokenTypeError('Statement keyword', self.tokenizer.tokenType(), self.tokenizer.rawToken(), self.tokenizer.lineNo)
 
     def compileSubroutineCall(self):
+        
         # Identifier: subroutineName or (className | varName)
-        subroutineName = self.tokenizer.identifier()
+
+        # Check symboltable to see if this is an instantiated class object
+        # If so, we need to retrieve the object type to be able to call the method
+        if self.symbolTable.typeOf(self.tokenizer.identifier()):
+            # This is a declared variable, so assume instantiated class object
+            targetObject = self.tokenizer.identifier()
+            subroutineName = self.symbolTable.typeOf(targetObject)
+        else:
+            # Not declared, assume we are calling it on the class directly
+            subroutineName = self.tokenizer.identifier()
+            targetObject = None
         self.tokenizer.advance()
+
+        thisArg = 0
 
         # Symbol: . (indicating format of className.subroutineName) or ( (indicating format of subroutineName)
         if self.tokenizer.symbol() == ".":
@@ -282,10 +285,26 @@ class CompilationEngine():
 
             # Identifier: subroutineName
             subroutineName += self.tokenizer.identifier()
+
+            # Push object pointer (if it exists) to top of stack so that it is available for methods
+            if targetObject is not None and self.symbolTable.kindOf(targetObject):
+                if self.symbolTable.kindOf(targetObject) == 'field':
+                    self.vmWriter.writePush('this', self.symbolTable.indexOf(targetObject))
+                else:
+                    self.vmWriter.writePush(self.symbolTable.kindOf(targetObject), self.symbolTable.indexOf(targetObject))
+                thisArg = 1
             self.tokenizer.advance()
 
-            # Symbol: (
-            self.tokenizer.advance()
+        elif self.tokenizer.symbol() == '(':
+            # We are calling a method from a method within the same class, so push the class pointer to stack for first arg
+            self.vmWriter.writePush('pointer', 0)
+            thisArg = 1
+
+            # Also append className to start so that we have a complete vm function name
+            subroutineName = self.className + '.' + subroutineName
+        
+        # Symbol: (
+        self.tokenizer.advance()
 
         nArgs = self.compileExpressionList()
 
@@ -293,7 +312,7 @@ class CompilationEngine():
         self.tokenizer.advance()
 
         # Write function call
-        self.vmWriter.writeCall(subroutineName, nArgs)
+        self.vmWriter.writeCall(subroutineName, nArgs + thisArg)
 
     def compileDo(self):
 
@@ -336,10 +355,16 @@ class CompilationEngine():
         self.tokenizer.advance()
 
         # Write VM code - pop from top of stack to variable
-        self.vmWriter.writePop(
-            self.symbolTable.kindOf(varName),
-            self.symbolTable.indexOf(varName)
-        )
+        if self.symbolTable.kindOf(varName) == 'field':
+            self.vmWriter.writePop(
+                'this',
+                self.symbolTable.indexOf(varName)
+            )
+        else:
+            self.vmWriter.writePop(
+                self.symbolTable.kindOf(varName),
+                self.symbolTable.indexOf(varName)
+            )
     
     def compileWhile(self):
 
@@ -390,6 +415,9 @@ class CompilationEngine():
         # Symbol: ; or expression then ;
         if self.tokenizer.rawToken() is not ';':
             self.compileExpression()
+        else:
+            # No return value - push constant 0
+            self.vmWriter.writePush('constant', 0)
 
         self.tokenizer.advance()
 
@@ -432,19 +460,22 @@ class CompilationEngine():
 
         self.vmWriter.writeLabel('startElse' + uniqueNo)
 
-        if self.tokenizer.keyWord() == 'ELSE':
+        try:
+            if self.tokenizer.keyWord() == 'ELSE':
 
-            # keyword: else
-            self.tokenizer.advance()
+                # keyword: else
+                self.tokenizer.advance()
 
-            # symbol: {
-            self.tokenizer.advance()
-            
-            # Compile statements
-            self.compileStatements()
+                # symbol: {
+                self.tokenizer.advance()
+                
+                # Compile statements
+                self.compileStatements()
 
-            # symbol: }
-            self.tokenizer.advance()
+                # symbol: }
+                self.tokenizer.advance()
+        except TokenTypeError:
+            pass
 
         self.vmWriter.writeLabel('endIf' + uniqueNo)
 
@@ -548,10 +579,17 @@ class CompilationEngine():
             else:
                 # Identifier: varName
                 # Retrieve segment and index from symboltable and push to top of stack
-                self.vmWriter.writePush(
-                    self.symbolTable.kindOf(self.tokenizer.identifier()),
-                    self.symbolTable.indexOf(self.tokenizer.identifier())
-                )
+                varName = self.tokenizer.identifier()
+                if self.symbolTable.kindOf(varName) == 'field':
+                    self.vmWriter.writePush(
+                        'this',
+                        self.symbolTable.indexOf(varName)
+                    )
+                else:
+                    self.vmWriter.writePush(
+                        self.symbolTable.kindOf(varName),
+                        self.symbolTable.indexOf(varName)
+                    )
                 self.tokenizer.advance()
             
         elif self.tokenizer.symbol() == '(':

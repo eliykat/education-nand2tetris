@@ -54,8 +54,6 @@ class JackTokenizer:
         self.input = open(input)
         self.lineNo = 0
 
-        print("Opened " + input + " for tokenizing")
-
         self.nextLine()
 
     def hasMoreTokens(self):
@@ -216,4 +214,3 @@ class JackTokenizer:
 
     def close(self):
         self.input.close()
-        print("Tokenizing finished.")
