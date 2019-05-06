@@ -526,7 +526,24 @@ class CompilationEngine():
         elif tokenType == 'STRING_CONST':
 
             # String constant
-            self.subTag('stringConstant')
+            string = self.tokenizer.stringVal()
+
+            # Create empty string object of required length and store it in pointer 1 (that)
+            length = len(string)
+            self.vmWriter.writePush('constant', length)
+            self.vmWriter.writeCall('String.new', 1)
+            self.vmWriter.writePop('pointer', 1)
+            
+            # Append each char in the string
+            for i in range(0, length - 1):
+                ascii_value = ord(string[i])
+                self.vmWriter.writePush('pointer', 1)
+                self.vmWriter.writePush('constant', ascii_value)
+                self.vmWriter.writeCall('String.appendChar', 2)
+
+            # No need to return the pointer because it is already stored in pointer 1
+
+            # Next token
             self.tokenizer.advance()
 
         elif tokenType == 'KEYWORD':
