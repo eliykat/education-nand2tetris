@@ -27,25 +27,31 @@ not
 pop local 0
 push constant 2048
 pop local 1
+push local 1
+push constant 16383
+push constant 2048
+sub
+call Sys.poke 2
+pop temp 0
+push local 1
+push constant 1
+add
+push constant 0
+call Sys.poke 2
+pop temp 0
 label WHILE_EXP0
 push argument 0
 push constant 1
 add
 push local 1
-push static 0
-add
-pop pointer 1
-push that 0
+call Sys.peek 1
 eq
 not
 push argument 0
 push constant 2
 add
 push local 1
-push static 0
-add
-pop pointer 1
-push that 0
+call Sys.peek 1
 gt
 not
 and
@@ -54,10 +60,7 @@ if-goto WHILE_END0
 push local 1
 push constant 1
 add
-push static 0
-add
-pop pointer 1
-push that 0
+call Sys.peek 1
 push constant 0
 eq
 if-goto IF_TRUE0
@@ -84,10 +87,7 @@ pop local 2
 push local 1
 push constant 1
 add
-push static 0
-add
-pop pointer 1
-push that 0
+call Sys.peek 1
 pop local 1
 goto WHILE_EXP0
 label WHILE_END0
@@ -95,10 +95,7 @@ push argument 0
 push constant 1
 add
 push local 1
-push static 0
-add
-pop pointer 1
-push that 0
+call Sys.peek 1
 eq
 if-goto IF_TRUE2
 goto IF_FALSE2
@@ -106,133 +103,83 @@ label IF_TRUE2
 push local 2
 push constant 1
 add
-push static 0
-add
 push local 1
 push constant 1
 add
-push static 0
-add
-pop pointer 1
-push that 0
+call Sys.peek 1
+call Sys.poke 2
 pop temp 0
-pop pointer 1
-push temp 0
-pop that 0
 goto IF_END2
 label IF_FALSE2
 push local 1
-push static 0
-add
 push local 1
+call Sys.peek 1
 push argument 0
 sub
-push static 0
-add
-pop pointer 1
-push that 0
+call Sys.poke 2
 pop temp 0
-pop pointer 1
-push temp 0
-pop that 0
 push local 1
 push argument 0
 add
 pop local 1
 label IF_END2
 push local 1
-push static 0
-add
 push argument 0
+call Sys.poke 2
 pop temp 0
-pop pointer 1
-push temp 0
-pop that 0
 push local 1
 push constant 1
 add
 return
-function Memory.defrag 1
+function Memory.defrag 2
 push constant 2048
 pop local 0
 label WHILE_EXP0
 push local 0
 push constant 1
 add
-push static 0
-add
-pop pointer 1
-push that 0
+call Sys.peek 1
 not
 if-goto WHILE_END0
 push local 0
 push local 0
-push static 0
-add
-pop pointer 1
-push that 0
+call Sys.peek 1
 add
 push local 0
 push constant 1
 add
-push static 0
-add
-pop pointer 1
-push that 0
+call Sys.peek 1
 eq
 if-goto IF_TRUE0
 goto IF_FALSE0
 label IF_TRUE0
 push local 0
-push static 0
+push constant 1
 add
+call Sys.peek 1
+pop local 1
 push local 0
-push static 0
-add
-pop pointer 1
-push that 0
 push local 0
-push static 0
+call Sys.peek 1
+push local 1
+call Sys.peek 1
 add
-pop pointer 1
-push that 0
-push static 0
-add
-pop pointer 1
-push that 0
-add
+call Sys.poke 2
 pop temp 0
-pop pointer 1
-push temp 0
-pop that 0
 push local 0
 push constant 1
 add
-push static 0
-add
-push local 0
+push local 1
 push constant 1
 add
-push static 0
-add
-pop pointer 1
-push that 0
-push static 0
-add
-pop pointer 1
-push that 0
+call Sys.peek 1
+call Sys.poke 2
 pop temp 0
-pop pointer 1
-push temp 0
-pop that 0
 label IF_FALSE0
 push local 0
 push constant 1
 add
-push static 0
-add
-pop pointer 1
-push that 0
+call Sys.peek 1
 pop local 0
 goto WHILE_EXP0
 label WHILE_END0

@@ -33,6 +33,7 @@ class Memory {
     /** Finds an available RAM block of the given size and returns
      *  a reference to its base address. */
     function int alloc(int size) {
+        // Note: heap is from 2048 - 16383
         var boolean defrag;
         var int block;
         var int prevBlock;
@@ -40,15 +41,18 @@ class Memory {
         let defrag = true;  //DISABLED FOR TESTING PURPOSES
         let block = 2048;
 
+        do Sys.poke(block, 16383 - 2048);   // Set initial length
+        do Sys.poke(block + 1, null);       // Set next pointer
+
         // Search through the freeList until a block of sufficient length is found
         // Acceptable block lengths are either:
         // Equal to the required size + 1 (1 being for the 'length' metadata stored before the start of the returned block)
         // OR
         // Equal to or greater than the required size + 3 (1 being for the 'length' metadata, and 2 being to leave behind a block that can still operate in the freeList)
         //      (This is expressed as greater than size + 2 as we do not have a => comparison operator)
-        while (~(size + 1 = memory[block]) & ~(size + 2 > memory[block])) {
+        while (~(size + 1 = Sys.peek(block)) & ~(size + 2 > Sys.peek(block)) ) {
 
-            if (memory[block + 1] = null) {
+            if (Sys.peek(block + 1) = null) {
                 if (~defrag) {
                     let defrag = Memory.defrag();
                     let block = 2048;   // Reset loop to try again after defrag
@@ -58,37 +62,39 @@ class Memory {
             }
 
             let prevBlock = block;
-            let block = memory[block + 1];
+            let block = Sys.peek(block + 1);
         }
 
         // Found block of required size
-        if (size + 1 = memory[block]) { 
+        if (size + 1 = Sys.peek(block) ) { 
             // Size matches the block length - remove entire block from list
-            let memory[prevBlock + 1] = memory[block + 1];
-
+            do Sys.poke(prevBlock + 1, Sys.peek(block + 1) );
         } else {
             // Size is less than block length, truncate existing block by updating size and moving block pointer
-            let memory[block] = memory[block - size];
+            do Sys.poke(block, Sys.peek(block) - size);
             let block = block + size;
         }
 
         // Set new block length and return block, starting after length metadata
-        let memory[block] = size;
+        do Sys.poke(block, size);
         return block + 1;
     }
 
     function boolean defrag() {
         var int block;
+        var int nextBlock;
         let block = 2048;
 
-        while (memory[block + 1]) {
-            if (block + memory[block] = memory[block + 1]) {
+        while (Sys.peek(block + 1)) {
+            if (block + Sys.peek(block) = Sys.peek(block + 1) ) {
                 // Block is physically adjacent to next block
-                let memory[block] = memory[block] + memory[memory[block]];
-                let memory[block + 1] = memory[memory[block + 1]];
+                let nextBlock = Sys.peek(block + 1);
+
+                do Sys.poke(block, Sys.peek(block) + Sys.peek(nextBlock));   // Update size to incorporate both blocks
+                do Sys.poke(block + 1, Sys.peek(nextBlock + 1));            // Update pointer to skip nextBlock
             }
 
-            let block = memory[block + 1];
+            let block = Sys.peek(block + 1);
         }
 
         return true;
