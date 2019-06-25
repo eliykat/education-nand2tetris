@@ -10,19 +10,13 @@
  */ 
 class Memory {
 
+    static Array memory;
+
     /** Initializes the class. */
     function void init() {
         // Initialise memory variable for direct memory access
-        static Array memory;
         let memory = 0;
-
-        // Initialise heap pointers for alloc and deAlloc
-        // NB: heap is from 2048 - 16383
-        static int FreeList = 2048;     // Base of heap
-        let memory[FreeList] = 14335;   // Length of entire heap
-        let memory[FreeList + 1] = null;
-
-        static int heapEnd = 16383;
+        return;
     }
 
     /** Returns the RAM value at the given address. */
@@ -33,6 +27,7 @@ class Memory {
     /** Sets the RAM value at the given address to the given value. */
     function void poke(int address, int value) {
         let memory[address] = value;
+        return;
     }
 
     /** Finds an available RAM block of the given size and returns
@@ -54,7 +49,7 @@ class Memory {
         while (~(size + 1 = memory[block]) & ~(size + 2 > memory[block])) {
 
             if (memory[block + 1] = null) {
-                if (defrag = false) {
+                if (~defrag) {
                     let defrag = Memory.defrag();
                     let block = 2048;   // Reset loop to try again after defrag
                 } else {
@@ -74,7 +69,7 @@ class Memory {
         } else {
             // Size is less than block length, truncate existing block by updating size and moving block pointer
             let memory[block] = memory[block - size];
-            let block = block + size
+            let block = block + size;
         }
 
         // Set new block length and return block, starting after length metadata
@@ -82,13 +77,18 @@ class Memory {
         return block + 1;
     }
 
-    function void defrag() {
+    function boolean defrag() {
+        var int block;
+        let block = 2048;
+
         while (memory[block + 1]) {
-            if (block + memory[block] = memory[block + 1) {
+            if (block + memory[block] = memory[block + 1]) {
                 // Block is physically adjacent to next block
                 let memory[block] = memory[block] + memory[memory[block]];
                 let memory[block + 1] = memory[memory[block + 1]];
             }
+
+            let block = memory[block + 1];
         }
 
         return true;
@@ -97,6 +97,6 @@ class Memory {
     /** De-allocates the given object (cast as an array) by making
      *  it available for future allocations. */
     function void deAlloc(Array o) {
-        
+        return;
     }    
 }
