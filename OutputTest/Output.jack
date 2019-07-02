@@ -5,7 +5,7 @@
 
 /**
  * A library of functions for writing text on the screen.
- * The Hack physical screen consists of 512 rows of 256 pixels each.
+ * The Hack physical screen consists of 256 rows of 512 pixels each.
  * The library uses a fixed font, in which each character is displayed 
  * within a frame which is 11 pixels high (including 1 pixel for inter-line 
  * spacing) and 8 pixels wide (including 2 pixels for inter-character spacing).
@@ -19,8 +19,19 @@ class Output {
     // Character map for displaying characters
     static Array charMaps; 
 
+    // Current row (0-22) and column (0-63), X coordinates (col * 8), Y coordinates (row * 11)
+    static int cursorRow, cursorCol, cursorX, cursorY;
+
     /** Initializes the screen, and locates the cursor at the screen's top-left. */
     function void init() {
+        do Output.initMap();
+        
+        let cursorRow = 0;
+        let cursorCol = 0;
+        let cursorX = 0;
+        let cursorY = 0;
+
+        return;
     }
 
     // Initializes the character map array
@@ -71,7 +82,7 @@ class Output {
         do Output.create(64,30,51,51,59,59,59,27,3,30,0,0);  // @
         do Output.create(63,30,51,51,24,12,12,0,12,12,0,0);  // ?
 
-        do Output.create(65,0,0,0,0,0,0,0,0,0,0,0);          // A ** TO BE FILLED **
+        do Output.create(65,12,30,51,51,63,51,51,51,51,0,0);          // A ** TO BE FILLED ** - DONE
         do Output.create(66,31,51,51,51,31,51,51,51,31,0,0); // B
         do Output.create(67,28,54,35,3,3,3,35,54,28,0,0);    // C
         do Output.create(68,15,27,51,51,51,51,51,27,15,0,0); // D
@@ -143,9 +154,10 @@ class Output {
     // Creates the character map array of the given character index, using the given values.
     function void create(int index, int a, int b, int c, int d, int e,
                          int f, int g, int h, int i, int j, int k) {
-	var Array map;
 
-	let map = Array.new(11);
+	    var Array map;
+
+	    let map = Array.new(11);
         let charMaps[index] = map;
 
         let map[0] = a;
@@ -176,28 +188,112 @@ class Output {
     /** Moves the cursor to the j-th column of the i-th row,
      *  and erases the character displayed there. */
     function void moveCursor(int i, int j) {
+
+        var int yPixel, xPixel;
+
+        // Check to make sure cursor position is legal
+        if (j > 63 | i > 22) {
+
+            // Temporary disabled to avoid infinite recursion
+            // do Output.moveCursor(0,22);
+            // do Sys.error(20);
+
+            do Sys.halt();
+        }
+
+        // Set class variables
+        let cursorRow = i;
+        let cursorCol = j;
+        let cursorX = cursorCol * 8;
+        let cursorY = cursorRow * 11;
+
+        do Output.erase();
+
+        return;
     }
 
     /** Displays the given character at the cursor location,
      *  and advances the cursor one column forward. */
     function void printChar(char c) {
+        var Array bitmap;
+        var int bitmapY, bitmapX;
+        var boolean color;
+
+        let bitmap = Output.getMap(c);
+        let bitmapY = 0;
+        let bitmapX = 0;
+
+        while (bitmapY < 11) {
+            while (bitmapX < 8) {
+
+                // Get color (black or white) from the relevant bit of the relevant word
+                let color = Math.bit(bitmap[bitmapY], bitmapX);
+                do Screen.setColor(color);
+
+                // Draw the pixel
+                do Screen.drawPixel(cursorX + bitmapX, cursorY + bitmapY);
+                let bitmapX = bitmapX + 1;
+            }
+            let bitmapY = bitmapY + 1;
+        }
+
+        return;
     }
 
     /** displays the given string starting at the cursor location,
      *  and advances the cursor appropriately. */
     function void printString(String s) {
+        var int i;
+        let i = 0;
+
+        // TODO: DEAL WITH INTEGERS
+
+        while (i < s.length()) {
+            do Output.printChar(s[i]);
+            let i = i + 1;
+        }
+
+        return;
     }
 
     /** Displays the given integer starting at the cursor location,
      *  and advances the cursor appropriately. */
     function void printInt(int i) {
+
+        return;
     }
 
     /** Advances the cursor to the beginning of the next line. */
     function void println() {
+        do Output.moveCursor(cursorRow + 1, 0);
+        return;
     }
 
     /** Moves the cursor one column back. */
     function void backSpace() {
+        do Output.moveCursor(cursorRow, cursorCol - 1);
+        return;
     }
+
+    /** Internal function to erase current character without advancing cursor */
+    function void erase(){
+        var int xPixel, yPixel;
+        let xPixel = 0;
+        let yPixel = 0;
+
+        // Set draw color to white
+        do Screen.setColor(0);
+
+        // Erase 8 x 11 cursor area (note can't use printChar because that will advance the cursor)
+        while (yPixel < 11) {
+            while (xPixel < 8) {
+                do Screen.drawPixel(cursorX + xPixel, cursorY + yPixel);
+                let xPixel = xPixel + 1;
+            }
+            let yPixel = yPixel + 1;
+        }  
+
+        return;
+    }
+
 }

@@ -44,6 +44,7 @@ class Math {
         }
     }
 
+    /** Tests if the j'th bit of x is 1 or 0 and returns true or false respectively */
     function boolean bit(int x, int j) {
         if ( x & twoToThe[j] ) {
             return true;
