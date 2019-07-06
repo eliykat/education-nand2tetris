@@ -272,6 +272,7 @@ class Output {
 
     /** Displays the given integer starting at the cursor location,
      *  and advances the cursor appropriately. */
+     // Ideally this is probably combined or uses String.setInt, as both involve converting ints to strings. But not today.
     function void printInt(int i) {
         var int lastDigit;
 
