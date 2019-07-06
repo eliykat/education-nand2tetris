@@ -195,11 +195,9 @@ class Output {
         // Check to make sure cursor position is legal
         if (j > 63 | i > 22) {
 
-            // Temporary disabled to avoid infinite recursion
-            // do Output.moveCursor(0,22);
-            // do Sys.error(20);
+            do Output.moveCursor(0,22);
+            do Sys.error(20);
 
-            do Sys.halt();
         }
 
         // Set class variables
