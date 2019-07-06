@@ -25,6 +25,7 @@ class Output {
     /** Initializes the screen, and locates the cursor at the screen's top-left. */
     function void init() {
         do Output.initMap();
+        do Util.init();
         
         let cursorRow = 0;
         let cursorCol = 0;
@@ -221,13 +222,15 @@ class Output {
 
         let bitmap = Output.getMap(c);
         let bitmapY = 0;
-        let bitmapX = 0;
 
         while (bitmapY < 11) {
+
+            let bitmapX = 0;
+
             while (bitmapX < 8) {
 
                 // Get color (black or white) from the relevant bit of the relevant word
-                let color = Math.bit(bitmap[bitmapY], bitmapX);
+                let color = Util.bit(bitmap[bitmapY], bitmapX);
                 do Screen.setColor(color);
 
                 // Draw the pixel
@@ -237,6 +240,19 @@ class Output {
             let bitmapY = bitmapY + 1;
         }
 
+        // Advance the cursor
+        if (cursorCol < 63) {
+            do Output.moveCursor(cursorRow, cursorCol + 1);
+        }
+        else {
+            if (cursorRow < 22) {
+                do Output.println();
+            }
+            else {
+                do Output.moveCursor(0,0);
+            }
+        }
+
         return;
     }
 
@@ -244,12 +260,12 @@ class Output {
      *  and advances the cursor appropriately. */
     function void printString(String s) {
         var int i;
+        var char c;
         let i = 0;
 
-        // TODO: DEAL WITH INTEGERS
-
         while (i < s.length()) {
-            do Output.printChar(s[i]);
+            let c = s.charAt(i);
+            do Output.printChar(c);
             let i = i + 1;
         }
 
@@ -259,8 +275,27 @@ class Output {
     /** Displays the given integer starting at the cursor location,
      *  and advances the cursor appropriately. */
     function void printInt(int i) {
+        var int lastDigit;
+
+        // Check if less than zero - if so, print negative sign first and then convert to absolute number
+        if (i < 0) {
+            do Output.printChar(45);
+            let i = Math.abs(i);
+        }
+
+        let lastDigit = i - (10 * (i/10));    // This is equivalent to i % 10, using an implicit floor function in the division
+        
+        // If there are digits remaining (i > 10) then call this recursively
+        if (i > 10) {
+            do Output.printInt(i/10);
+        }
+
+        // Print the current char (putting this after the recursive call prints in the correct order)
+        // Add 48 to any int to obtain its ASCII code
+        do Output.printChar(lastDigit + 48);
 
         return;
+
     }
 
     /** Advances the cursor to the beginning of the next line. */
@@ -275,23 +310,24 @@ class Output {
         return;
     }
 
-    /** Internal function to erase current character without advancing cursor */
+    /** Internal function to erase current character without advancing cursor.
+    Optimised version of the printChar function. */
     function void erase(){
-        var int xPixel, yPixel;
-        let xPixel = 0;
-        let yPixel = 0;
+        var int bitmapY, bitmapX;
+        var boolean color;
 
-        // Set draw color to white
-        do Screen.setColor(0);
+        let bitmapY = 0;
 
-        // Erase 8 x 11 cursor area (note can't use printChar because that will advance the cursor)
-        while (yPixel < 11) {
-            while (xPixel < 8) {
-                do Screen.drawPixel(cursorX + xPixel, cursorY + yPixel);
-                let xPixel = xPixel + 1;
+        do Screen.setColor(false);
+
+        while (bitmapY < 11) {
+            let bitmapX = 0;
+            while (bitmapX < 8) {
+                do Screen.drawPixel(cursorX + bitmapX, cursorY + bitmapY);
+                let bitmapX = bitmapX + 1;
             }
-            let yPixel = yPixel + 1;
-        }  
+            let bitmapY = bitmapY + 1;
+        }
 
         return;
     }

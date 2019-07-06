@@ -33,10 +33,9 @@ class Main {
         do Output.printString(s);
         do Output.println();
         
-        // ENABLE THESE LATER
-        // do Output.printInt(-12345);
-        // do Output.backSpace();
-        // do Output.printInt(6789);
+        do Output.printInt(-12345);
+        do Output.backSpace();
+        do Output.printInt(6789);
         
         return;
     }
