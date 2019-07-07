@@ -213,6 +213,7 @@ class Output {
 
     /** Displays the given character at the cursor location,
      *  and advances the cursor one column forward. */
+     // NOTE: a much more efficient way of doing this is just to copy each word of the bitmap into the memory map, rather than iterating pixel by pixel
     function void printChar(char c) {
         var Array bitmap;
         var int bitmapY, bitmapX;

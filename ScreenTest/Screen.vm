@@ -1,0 +1,157 @@
+function Screen.init 0
+call Util.init 0
+pop temp 0
+push constant 0
+not
+call Screen.setColor 1
+pop temp 0
+push constant 0
+return
+function Screen.clearScreen 0
+push constant 0
+return
+function Screen.setColor 0
+push argument 0
+pop static 0
+push constant 0
+return
+function Screen.drawPixel 3
+push constant 16384
+push argument 1
+push constant 32
+call Math.multiply 2
+add
+push argument 0
+push constant 16
+call Math.divide 2
+add
+pop local 0
+push argument 0
+push constant 16
+push argument 0
+push constant 16
+call Math.divide 2
+call Math.multiply 2
+sub
+pop local 1
+push local 0
+call Memory.peek 1
+pop local 2
+push static 0
+if-goto IF_TRUE0
+goto IF_FALSE0
+label IF_TRUE0
+push local 0
+push local 2
+push local 1
+call Util.bitmask 1
+or
+call Memory.poke 2
+pop temp 0
+goto IF_END0
+label IF_FALSE0
+push local 0
+push local 2
+not
+push local 1
+call Util.bitmask 1
+or
+not
+call Memory.poke 2
+pop temp 0
+label IF_END0
+push constant 0
+return
+function Screen.drawLine 4
+push argument 0
+push argument 2
+eq
+if-goto IF_TRUE0
+goto IF_FALSE0
+label IF_TRUE0
+push argument 1
+push argument 3
+call Math.min 2
+pop local 1
+push argument 1
+push argument 3
+call Math.max 2
+pop local 3
+label WHILE_EXP0
+push local 1
+push local 3
+lt
+not
+if-goto WHILE_END0
+push argument 0
+push local 1
+call Screen.drawPixel 2
+pop temp 0
+push local 1
+push constant 1
+add
+pop local 1
+goto WHILE_EXP0
+label WHILE_END0
+push constant 0
+return
+label IF_FALSE0
+push argument 1
+push argument 3
+eq
+if-goto IF_TRUE1
+goto IF_FALSE1
+label IF_TRUE1
+push argument 0
+push argument 2
+call Math.min 2
+pop local 0
+push argument 0
+push argument 2
+call Math.max 2
+pop local 2
+label WHILE_EXP1
+push local 0
+push local 2
+lt
+not
+if-goto WHILE_END1
+push local 0
+push argument 1
+call Screen.drawPixel 2
+pop temp 0
+push local 0
+push constant 1
+add
+pop local 0
+goto WHILE_EXP1
+label WHILE_END1
+push constant 0
+return
+label IF_FALSE1
+push constant 0
+return
+function Screen.drawRectangle 0
+label WHILE_EXP0
+push argument 1
+push argument 3
+lt
+not
+if-goto WHILE_END0
+push argument 0
+push argument 1
+push argument 2
+push argument 1
+call Screen.drawLine 4
+pop temp 0
+push argument 1
+push constant 1
+add
+pop argument 1
+goto WHILE_EXP0
+label WHILE_END0
+push constant 0
+return
+function Screen.drawCircle 0
+push constant 0
+return
