@@ -132,6 +132,10 @@ label WHILE_EXP1
 push local 0
 push local 2
 lt
+push local 0
+push local 2
+eq
+or
 not
 if-goto WHILE_END1
 push local 0

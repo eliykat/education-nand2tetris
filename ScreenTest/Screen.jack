@@ -85,7 +85,7 @@ class Screen {
             let oX = Math.min(x1, x2);
             let endX = Math.max(x1, x2);
 
-            while (oX < endX) {
+            while ((oX < endX) | (oX = endX)) {
                 do Screen.drawPixel(oX, y1);
                 let oX = oX + 1;
             }
