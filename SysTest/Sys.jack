@@ -12,12 +12,12 @@ class Sys {
     function void init() {
 
         // Initialise all OS classes required
+        do Memory.init();   // Must be initialised first to provide alloc() function used by subsequent init functions
         do Math.init();
         do Output.init();
         do Screen.init();
         do Keyboard.init();
-        do Memory.init();
-
+        
         // Execute user's program
         do Main.main();
 
@@ -48,40 +48,41 @@ class Sys {
             let a = 99 * 99;
             let a = 99 * 99;
             let a = 99 * 99;
-            let a = 99 * 99;
-            let a = 99 * 99;
-            let a = 99 * 99;
-            let a = 99 * 99;
-            let a = 99 * 99;
-            let a = 99 * 99;
-            let a = 99 * 99;
-            let a = 99 * 99;
-            let a = 99 * 99;
-            let a = 99 * 99;
-            let a = 99 * 99;
-            let a = 99 * 99;
-            let a = 99 * 99;
-            let a = 99 * 99;
-            let a = 99 * 99;
-            let a = 99 * 99;
-            let a = 99 * 99;
-            let a = 99 * 99;
-            let a = 99 * 99;
-            let a = 99 * 99;
-            let a = 99 * 99;
-            let a = 99 * 99;
-            let a = 99 * 99;
-            let a = 99 * 99;
-            let a = 99 * 99;
-            let a = 99 * 99;
-            let a = 99 * 99;
-            let a = 99 * 99;
-            let a = 99 * 99;
-            let a = 99 * 99;
-            let a = 99 * 99;
-            let a = 99 * 99;
-            let a = 99 * 99;
-            let a = 99 * 99;
+            // The below operations are required to reach the ~millisecond timing; but my OS is so slow anyway it has been removed to give it a boost
+            // let a = 99 * 99;
+            // let a = 99 * 99;
+            // let a = 99 * 99;
+            // let a = 99 * 99;
+            // let a = 99 * 99;
+            // let a = 99 * 99;
+            // let a = 99 * 99;
+            // let a = 99 * 99;
+            // let a = 99 * 99;
+            // let a = 99 * 99;
+            // let a = 99 * 99;
+            // let a = 99 * 99;
+            // let a = 99 * 99;
+            // let a = 99 * 99;
+            // let a = 99 * 99;
+            // let a = 99 * 99;
+            // let a = 99 * 99;
+            // let a = 99 * 99;
+            // let a = 99 * 99;
+            // let a = 99 * 99;
+            // let a = 99 * 99;
+            // let a = 99 * 99;
+            // let a = 99 * 99;
+            // let a = 99 * 99;
+            // let a = 99 * 99;
+            // let a = 99 * 99;
+            // let a = 99 * 99;
+            // let a = 99 * 99;
+            // let a = 99 * 99;
+            // let a = 99 * 99;
+            // let a = 99 * 99;
+            // let a = 99 * 99;
+            // let a = 99 * 99;
+            // let a = 99 * 99;
 
             let count = count + 1;
         }
