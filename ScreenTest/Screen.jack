@@ -22,6 +22,15 @@ class Screen {
 
     /** Erases the entire screen. */
     function void clearScreen() {
+        var int word;
+
+        let word = 16384;
+
+        while (word < 24576) {
+            do Memory.poke(word, 0);
+            let word = word + 1;
+        }
+
         return;
     }
 
@@ -55,6 +64,8 @@ class Screen {
     function void drawLine(int x1, int y1, int x2, int y2) {
         var int oX, oY;     // Offset coordinates from x1 and y1
         var int endX, endY; // End position
+        var int adyMinusbdx; // used for diagonal algorithm
+        var int incX, incY; // Increments used for diagonal algorithm - either +1 or -1 depending on whether endX and endY are positive or negative
 
         // Check for vertical line - note that straight line drawing could be optimised by drawing per word rather than per pixel where possible
         if (x1 = x2) {
@@ -83,8 +94,39 @@ class Screen {
         }
 
         // Diagonal line
-        return;
+        let oY = 0;
+        let oX = 0;
+        let adyMinusbdx = 0;
+        let endX = x2 - x1;
+        let endY = y2 - y1;
 
+        // Set increments to 1 or -1
+        if (endX > 0) { 
+            let incX = 1;
+        } else {
+            let incX = -1;
+        }
+
+        if (endY > 0) { 
+            let incY = 1;
+        } else {
+            let incY = -1;
+        }
+        
+        while ( (Math.abs(oX) < Math.abs(endX)) & (Math.abs(oY) < Math.abs(endY)) ) {
+
+            do Screen.drawPixel(x1 + oX, y1 + oY);
+
+            if (adyMinusbdx < 0) {
+                let oX = oX + incX;
+                let adyMinusbdx = adyMinusbdx + Math.abs(endY);
+            } else {
+                let oY = oY + incY;
+                let adyMinusbdx = adyMinusbdx - Math.abs(endX);
+            }
+        }
+        
+        return;
     }
 
     /** Draws a filled rectangle whose top left corner is (x1, y1)
@@ -102,6 +144,25 @@ class Screen {
 
     /** Draws a filled circle of radius r<=181 around (x,y), using the current color. */
     function void drawCircle(int x, int y, int r) {
+        var int dy;     // Distance from y. Ranges from -r to r
+        var int startLine, endLine;     // start and end of each line at each dy position
+        var int rSquared, sqrt;
+
+        let dy = -r;
+        let rSquared = r * r;
+
+        while (dy < (r + 1)) {
+
+            let sqrt = Math.sqrt(rSquared - (dy*dy));
+
+            let startLine = x - sqrt;
+            let endLine = x + sqrt;
+
+            do Screen.drawLine(startLine, y + dy, endLine, y + dy);
+
+            let dy = dy + 1;
+        }
+
         return;
     }
 }
