@@ -1,0 +1,111 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/12/Memory.jack
+
+/**
+ * This library provides two services: direct access to the computer's main
+ * memory (RAM), and allocation and recycling of memory blocks. The Hack RAM
+ * consists of 32,768 words, each holding a 16-bit binary number.
+ */ 
+class Memory {
+
+    static Array memory;
+    static int freeList;
+
+    /** Initializes the class. */
+    function void init() {
+        // Initialise memory variable for direct memory access
+        let memory = 0;
+        let freeList = 2048;            // Anchored to start of linked list, initialised to start of heap
+
+        let freeList[0] = 14335; // Set initial length, being 16383 - 2048
+        let freeList[1] = null;         // Set next pointer
+
+        return;
+    }
+
+    /** Returns the RAM value at the given address. */
+    function int peek(int address) {
+        return memory[address];
+    }
+
+    /** Sets the RAM value at the given address to the given value. */
+    function void poke(int address, int value) {
+        let memory[address] = value;
+        return;
+    }
+
+    /** Finds an available RAM block of the given size and returns
+     *  a reference to its base address. */
+    function int alloc(int size) {
+        var Array block;        // Pointer to traverse freeList
+        var Array prevBlock;      // Pointer to keep track of previous block (as linked list is 1 way only)
+        var Array newBlock;
+
+        let block = freeList;   // Set pointer to start of freeList
+        let prevBlock = null; 
+
+        // Search through the freeList until a block of sufficient length is found
+        // Acceptable block lengths are either:
+        // Equal to the required size + 1 (1 being for the 'length' metadata stored before the start of the returned block)
+        // OR
+        // Equal to or greater than the required size + 3 (1 being for the 'length' metadata, and 2 being to leave behind a block that can still operate in the freeList)
+        //      (This is expressed as greater than size + 2 as we do not have a => comparison operator)
+        while (~(size + 1 = block[0]) & size + 2 > block[0] ) {
+
+            if (block[1] = null) {
+                do Sys.halt();  // Defrag not implemented - unable to allocate memory space
+            }
+
+            let prevBlock = block;
+            let block = block[1];   // Move to the next block
+        }
+
+        // Found block of required size
+        if (size + 1 = block[0] ) { 
+            // Size matches the block length - remove entire block from list by updating preBlock pointer
+            let newBlock = block;
+
+            if (prevBlock = null) {
+                let freeList = block[1];
+            } else {
+                let prevBlock[1] = block[1];
+            }
+            
+        } else {
+            // Size is less than block length, truncate existing block by updating size and moving block pointer
+            // The new block is allocated at the beginning of the free space
+
+            let newBlock = block;
+
+            let block = block + size + 1;
+            let block[0] = newBlock[0] - size - 1;  // Set free block size
+            let block[1] = newBlock[1];             // Set free block pointer
+
+            // Update pointer to free block
+            if (prevBlock = null) {
+                let freeList = block;
+            } else {
+                let prevBlock[1] = block;
+            }
+        }
+
+        // Set new block length and return block, starting after length metadata
+        let newBlock[0] = size;
+        return newBlock + 1;
+    }
+
+    /** De-allocates the given object (cast as an array) by making
+     *  it available for future allocations. */
+    function void deAlloc(Array o) {
+        var int nextBlock;
+
+        let o = o - 1;  // Shift pointer back to the 'true' start of the block
+        let o[0] = o[0] + 1;    // Increment size pointer by 1 now that we are including the meta segment
+        let o[1] = freeList; // Update pointer
+        let freeList = o;       // Add to start of freeList
+
+        return;
+    }    
+}
