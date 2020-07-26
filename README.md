@@ -8,9 +8,17 @@ The software suite required to test or use any of these files is available for d
 
 The basic premise of the book is best explained in the Preface:
 
-    > We wrote this book because we felt that many computer science students are missing the forest for the trees. The typical student is marshaled through a series of courses in programming theory, and engineering, without pausing to appreciate the beauty of the picture at large. And the picture at large is such that hardware and osftware systems are tightly interrelated through a hidden web of abstractions, interfaces, and contract-based implementations. Failure to see this intricate enterprise in the flesh leaves many studetns and professionals with an uneasy feeling that, well, they don't fully understand what's going on inside computers.
+> We wrote this book because we felt that many computer science students are missing the forest for the trees. The typical student is marshaled through a series of courses 
+> in programming theory, and engineering, without pausing to appreciate the beauty of the picture at large. And the picture at large is such that hardware and software systems 
+> are tightly interrelated through a hidden web of abstractions, interfaces, and contract-based implementations. Failure to see this intricate enterprise in the flesh leaves 
+> many studetns and professionals with an uneasy feeling that, well, they don't fully understand what's going on inside computers.
     
-    We believe that the best way to understand how computers work is to build one from scratch. With that in mind, we came up with the following concept. Let's specify a simple but sufficiently powerful computer system, and have the students build its hardware platform and the software hierarchy from the ground up, starting with nothing more than elementary logic gates. And while we are at it, let's do it right We say this because building a general-purpose computer from first principles is a huge undertaking. Therefore, we identified a unique educational opportunity not only to build the thing, but also to illustrate, in a hands-on fashion, how to effectively plan and manage large-scale hardware and software development projects. In addition, we sought to demonstrate the ability to construct, through recursive ascent and human reasoning, fantastically complex and useful systems from nothing more than a few primitive building blocks.
+> We believe that the best way to understand how computers work is to build one from scratch. With that in mind, we came up with the following concept. Let's specify a simple 
+> but sufficiently powerful computer system, and have the students build its hardware platform and the software hierarchy from the ground up, starting with nothing more than 
+> elementary logic gates. And while we are at it, let's do it right We say this because building a general-purpose computer from first principles is a huge undertaking. 
+> Therefore, we identified a unique educational opportunity not only to build the thing, but also to illustrate, in a hands-on fashion, how to effectively plan and manage 
+> large-scale hardware and software development projects. In addition, we sought to demonstrate the ability to construct, through recursive ascent and human reasoning, 
+> fantastically complex and useful systems from nothing more than a few primitive building blocks.
 
 ### Overview of work
 
