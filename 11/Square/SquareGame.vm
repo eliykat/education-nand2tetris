@@ -1,0 +1,193 @@
+function SquareGame.new 0
+push constant 2
+call Memory.alloc 1
+pop pointer 0
+push constant 0
+push constant 0
+push constant 30
+call Square.new 3
+pop this 0
+push constant 0
+pop this 1
+push pointer 0
+return
+function SquareGame.dispose 0
+push argument 0
+pop pointer 0
+push this 0
+call Square.dispose 1
+push pointer 0
+call Memory.deAlloc 1
+push constant 0
+return
+function SquareGame.moveSquare 0
+push argument 0
+pop pointer 0
+push this 1
+push constant 1
+eq
+push constant 1
+add
+if-goto startElse0
+push this 0
+call Square.moveUp 1
+goto endIf0
+label startElse0
+label endIf0
+push this 1
+push constant 2
+eq
+push constant 1
+add
+if-goto startElse1
+push this 0
+call Square.moveDown 1
+goto endIf1
+label startElse1
+label endIf1
+push this 1
+push constant 3
+eq
+push constant 1
+add
+if-goto startElse2
+push this 0
+call Square.moveLeft 1
+goto endIf2
+label startElse2
+label endIf2
+push this 1
+push constant 4
+eq
+push constant 1
+add
+if-goto startElse3
+push this 0
+call Square.moveRight 1
+goto endIf3
+label startElse3
+label endIf3
+push constant 5
+call Sys.wait 1
+push constant 0
+return
+function SquareGame.run 2
+push argument 0
+pop pointer 0
+push constant 0
+pop local 1
+label startWhile4
+push local 1
+not
+push constant 1
+add
+if-goto endWhile4
+label startWhile5
+push local 0
+push constant 0
+eq
+push constant 1
+add
+if-goto endWhile5
+call Keyboard.keyPressed 0
+pop local 0
+push pointer 0
+call SquareGame.moveSquare 1
+goto startWhile5
+label endWhile5
+push local 0
+push constant 81
+eq
+push constant 1
+add
+if-goto startElse6
+push constant 1
+neg
+pop local 1
+goto endIf6
+label startElse6
+label endIf6
+push local 0
+push constant 90
+eq
+push constant 1
+add
+if-goto startElse7
+push this 0
+call Square.decSize 1
+goto endIf7
+label startElse7
+label endIf7
+push local 0
+push constant 88
+eq
+push constant 1
+add
+if-goto startElse8
+push this 0
+call Square.incSize 1
+goto endIf8
+label startElse8
+label endIf8
+push local 0
+push constant 131
+eq
+push constant 1
+add
+if-goto startElse9
+push constant 1
+pop this 1
+goto endIf9
+label startElse9
+label endIf9
+push local 0
+push constant 133
+eq
+push constant 1
+add
+if-goto startElse10
+push constant 2
+pop this 1
+goto endIf10
+label startElse10
+label endIf10
+push local 0
+push constant 130
+eq
+push constant 1
+add
+if-goto startElse11
+push constant 3
+pop this 1
+goto endIf11
+label startElse11
+label endIf11
+push local 0
+push constant 132
+eq
+push constant 1
+add
+if-goto startElse12
+push constant 4
+pop this 1
+goto endIf12
+label startElse12
+label endIf12
+label startWhile13
+push local 0
+push constant 0
+eq
+not
+push constant 1
+add
+if-goto endWhile13
+call Keyboard.keyPressed 0
+pop local 0
+push pointer 0
+call SquareGame.moveSquare 1
+goto startWhile13
+label endWhile13
+goto startWhile4
+label endWhile4
+push constant 0
+return

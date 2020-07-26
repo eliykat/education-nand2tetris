@@ -1,0 +1,19 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/11/Average/Main.jack
+
+// (Same as projects/09/Average/Main.jack)
+
+// Inputs some numbers and computes their average
+class Main {
+   function void main() {
+     var int length;
+
+     let length = Keyboard.readInt("How many numbers? ");
+     do Output.printString("Length is:");
+     do Output.printInt(length);
+
+     return;
+   }
+}

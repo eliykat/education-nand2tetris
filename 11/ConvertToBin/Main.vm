@@ -1,0 +1,106 @@
+function Main.main 1
+push constant 8001
+push constant 16
+push constant 1
+neg
+call Main.fillMemory 3
+push constant 8000
+call Memory.peek 1
+pop local 0
+pop local 0
+call Main.convert 1
+push constant 0
+return
+function Main.convert 3
+push constant 1
+neg
+pop local 2
+label startWhile0
+pop local 2
+push constant 1
+add
+if-goto endWhile0
+pop local 1
+push constant 1
+add
+pop local 1
+pop local 0
+call Main.nextMask 1
+pop local 0
+pop local 1
+push constant 16
+gt
+not
+push constant 1
+add
+if-goto startElse1
+pop argument 0
+pop local 0
+and
+push constant 0
+eq
+not
+push constant 1
+add
+if-goto startElse2
+push constant 8000
+pop local 1
+add
+push constant 1
+call Memory.poke 2
+goto endIf2
+label startElse2
+push constant 8000
+pop local 1
+add
+push constant 0
+call Memory.poke 2
+label endIf2
+goto endIf1
+label startElse1
+push constant 0
+pop local 2
+label endIf1
+goto startWhile0
+label endWhile0
+push constant 0
+return
+function Main.nextMask 0
+pop argument 0
+push constant 0
+eq
+push constant 1
+add
+if-goto startElse3
+push constant 1
+return
+goto endIf3
+label startElse3
+pop argument 0
+push constant 2
+call Math.multiply 2
+return
+label endIf3
+function Main.fillMemory 0
+label startWhile4
+pop argument 1
+push constant 0
+gt
+push constant 1
+add
+if-goto endWhile4
+pop argument 0
+pop argument 2
+call Memory.poke 2
+pop argument 1
+push constant 1
+sub
+pop argument 1
+pop argument 0
+push constant 1
+add
+pop argument 0
+goto startWhile4
+label endWhile4
+push constant 0
+return

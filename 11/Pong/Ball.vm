@@ -1,0 +1,452 @@
+function Ball.new 0
+push constant 15
+call Memory.alloc 1
+pop pointer 0
+push argument 0
+pop this 0
+push argument 1
+pop this 1
+push argument 2
+pop this 10
+push argument 3
+push constant 6
+sub
+pop this 11
+push argument 4
+pop this 12
+push argument 5
+push constant 6
+sub
+pop this 13
+push constant 0
+pop this 14
+push pointer 0
+call Ball.show 1
+pop temp 0
+push pointer 0
+return
+function Ball.dispose 0
+push argument 0
+pop pointer 0
+push pointer 0
+call Memory.deAlloc 1
+pop temp 0
+push constant 0
+return
+function Ball.show 0
+push argument 0
+pop pointer 0
+push constant 1
+neg
+call Screen.setColor 1
+pop temp 0
+push pointer 0
+call Ball.draw 1
+pop temp 0
+push constant 0
+return
+function Ball.hide 0
+push argument 0
+pop pointer 0
+push constant 0
+call Screen.setColor 1
+pop temp 0
+push pointer 0
+call Ball.draw 1
+pop temp 0
+push constant 0
+return
+function Ball.draw 0
+push argument 0
+pop pointer 0
+push this 0
+push this 1
+push this 0
+push constant 5
+add
+push this 1
+push constant 5
+add
+call Screen.drawRectangle 4
+pop temp 0
+push constant 0
+return
+function Ball.getLeft 0
+push argument 0
+pop pointer 0
+push this 0
+return
+function Ball.getRight 0
+push argument 0
+pop pointer 0
+push this 0
+push constant 5
+add
+return
+function Ball.setDestination 3
+push argument 0
+pop pointer 0
+push argument 1
+push this 0
+sub
+pop this 2
+push argument 2
+push this 1
+sub
+pop this 3
+push this 2
+call Math.abs 1
+pop local 0
+push this 3
+call Math.abs 1
+pop local 1
+push local 0
+push local 1
+lt
+pop this 7
+push this 7
+push constant 1
+add
+if-goto startElse0
+push local 0
+pop local 2
+push local 1
+pop local 0
+push local 2
+pop local 1
+push this 1
+push argument 2
+lt
+pop this 8
+push this 0
+push argument 1
+lt
+pop this 9
+goto endIf0
+label startElse0
+push this 0
+push argument 1
+lt
+pop this 8
+push this 1
+push argument 2
+lt
+pop this 9
+label endIf0
+push constant 2
+push local 1
+call Math.multiply 2
+push local 0
+sub
+pop this 4
+push constant 2
+push local 1
+call Math.multiply 2
+pop this 5
+push constant 2
+push local 1
+push local 0
+sub
+call Math.multiply 2
+pop this 6
+push constant 0
+return
+function Ball.move 0
+push argument 0
+pop pointer 0
+push pointer 0
+call Ball.hide 1
+pop temp 0
+push this 4
+push constant 0
+lt
+push constant 1
+add
+if-goto startElse1
+push this 4
+push this 5
+add
+pop this 4
+goto endIf1
+label startElse1
+push this 4
+push this 6
+add
+pop this 4
+push this 9
+push constant 1
+add
+if-goto startElse2
+push this 7
+push constant 1
+add
+if-goto startElse3
+push this 0
+push constant 4
+add
+pop this 0
+goto endIf3
+label startElse3
+push this 1
+push constant 4
+add
+pop this 1
+label endIf3
+goto endIf2
+label startElse2
+push this 7
+push constant 1
+add
+if-goto startElse4
+push this 0
+push constant 4
+sub
+pop this 0
+goto endIf4
+label startElse4
+push this 1
+push constant 4
+sub
+pop this 1
+label endIf4
+label endIf2
+label endIf1
+push this 8
+push constant 1
+add
+if-goto startElse5
+push this 7
+push constant 1
+add
+if-goto startElse6
+push this 1
+push constant 4
+add
+pop this 1
+goto endIf6
+label startElse6
+push this 0
+push constant 4
+add
+pop this 0
+label endIf6
+goto endIf5
+label startElse5
+push this 7
+push constant 1
+add
+if-goto startElse7
+push this 1
+push constant 4
+sub
+pop this 1
+goto endIf7
+label startElse7
+push this 0
+push constant 4
+sub
+pop this 0
+label endIf7
+label endIf5
+push this 0
+push this 10
+gt
+not
+push constant 1
+add
+if-goto startElse8
+push constant 1
+pop this 14
+push this 10
+pop this 0
+goto endIf8
+label startElse8
+label endIf8
+push this 0
+push this 11
+lt
+not
+push constant 1
+add
+if-goto startElse9
+push constant 2
+pop this 14
+push this 11
+pop this 0
+goto endIf9
+label startElse9
+label endIf9
+push this 1
+push this 12
+gt
+not
+push constant 1
+add
+if-goto startElse10
+push constant 3
+pop this 14
+push this 12
+pop this 1
+goto endIf10
+label startElse10
+label endIf10
+push this 1
+push this 13
+lt
+not
+push constant 1
+add
+if-goto startElse11
+push constant 4
+pop this 14
+push this 13
+pop this 1
+goto endIf11
+label startElse11
+label endIf11
+push pointer 0
+call Ball.show 1
+pop temp 0
+push this 14
+return
+function Ball.bounce 5
+push argument 0
+pop pointer 0
+push this 2
+push constant 10
+call Math.divide 2
+pop local 2
+push this 3
+push constant 10
+call Math.divide 2
+pop local 3
+push argument 1
+push constant 0
+eq
+push constant 1
+add
+if-goto startElse12
+push constant 10
+pop local 4
+goto endIf12
+label startElse12
+push this 2
+push constant 0
+lt
+not
+push argument 1
+push constant 1
+eq
+and
+push this 2
+push constant 0
+lt
+push argument 1
+push constant 1
+neg
+eq
+and
+or
+push constant 1
+add
+if-goto startElse13
+push constant 20
+pop local 4
+goto endIf13
+label startElse13
+push constant 5
+pop local 4
+label endIf13
+label endIf12
+push this 14
+push constant 1
+eq
+push constant 1
+add
+if-goto startElse14
+push constant 506
+pop local 0
+push local 3
+push constant 50
+neg
+call Math.multiply 2
+push local 2
+call Math.divide 2
+pop local 1
+push this 1
+push local 1
+push local 4
+call Math.multiply 2
+add
+pop local 1
+goto endIf14
+label startElse14
+push this 14
+push constant 2
+eq
+push constant 1
+add
+if-goto startElse15
+push constant 0
+pop local 0
+push local 3
+push constant 50
+call Math.multiply 2
+push local 2
+call Math.divide 2
+pop local 1
+push this 1
+push local 1
+push local 4
+call Math.multiply 2
+add
+pop local 1
+goto endIf15
+label startElse15
+push this 14
+push constant 3
+eq
+push constant 1
+add
+if-goto startElse16
+push constant 250
+pop local 1
+push local 2
+push constant 25
+neg
+call Math.multiply 2
+push local 3
+call Math.divide 2
+pop local 0
+push this 0
+push local 0
+push local 4
+call Math.multiply 2
+add
+pop local 0
+goto endIf16
+label startElse16
+push constant 0
+pop local 1
+push local 2
+push constant 25
+call Math.multiply 2
+push local 3
+call Math.divide 2
+pop local 0
+push this 0
+push local 0
+push local 4
+call Math.multiply 2
+add
+pop local 0
+label endIf16
+label endIf15
+label endIf14
+push pointer 0
+push local 0
+push local 1
+call Ball.setDestination 3
+pop temp 0
+push constant 0
+return

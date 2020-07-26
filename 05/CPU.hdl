@@ -1,0 +1,100 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/05/CPU.hdl
+
+/**
+ * The Hack CPU (Central Processing unit), consisting of an ALU,
+ * two registers named A and D, and a program counter named PC.
+ * The CPU is designed to fetch and execute instructions written in 
+ * the Hack machine language. In particular, functions as follows:
+ * Executes the inputted instruction according to the Hack machine 
+ * language specification. The D and A in the language specification
+ * refer to CPU-resident registers, while M refers to the external
+ * memory location addressed by A, i.e. to Memory[A]. The inM input 
+ * holds the value of this location. If the current instruction needs 
+ * to write a value to M, the value is placed in outM, the address 
+ * of the target location is placed in the addressM output, and the 
+ * writeM control bit is asserted. (When writeM==0, any value may 
+ * appear in outM). The outM and writeM outputs are combinational: 
+ * they are affected instantaneously by the execution of the current 
+ * instruction. The addressM and pc outputs are clocked: although they 
+ * are affected by the execution of the current instruction, they commit 
+ * to their new values only in the next time step. If reset==1 then the 
+ * CPU jumps to address 0 (i.e. pc is set to 0 in next time step) rather 
+ * than to the address resulting from executing the current instruction. 
+ */
+
+CHIP CPU {
+
+    IN  inM[16],         // M value input  (M = contents of RAM[A])
+        instruction[16], // Instruction for execution
+        reset;           // Signals whether to re-start the current
+                         // program (reset==1) or continue executing
+                         // the current program (reset==0).
+
+    OUT outM[16],        // M value output
+        writeM,          // Write to M? 
+        addressM[15],    // Address in data memory (of M)
+        pc[15];          // address of next instruction
+
+    PARTS:
+    // Put your code here:
+    
+    // Mux that receives instruction and ALU out
+    Mux16(a=instruction,b=ALUout,sel=instruction[15],out=ARegIn);
+    
+    // Determine whether to load the A register
+    // either: check that it is a C instruction and that appropriate d-bit is set, or
+    // check that it is an A instruction (which by definition means load the A register)
+    
+    Not(in=instruction[15],out=loadA1);
+    And(a=instruction[15],b=instruction[5],out=loadA2);
+    Or(a=loadA1,b=loadA2,out=loadA);    
+    
+    ARegister(in=ARegIn,load=loadA,out=ARegOut,out[0..14]=addressM);
+    
+    // Mux that chooses between A and M inputs
+    Mux16(a=ARegOut,b=inM,sel=instruction[12],out=AMOut);
+    
+    ALU(x=DRegOut,y=AMOut,zx=instruction[11],nx=instruction[10],zy=instruction[9],
+        ny=instruction[8],f=instruction[7],no=instruction[6],
+        out=ALUout,out=outM,zr=ALUzr,ng=ALUng);
+    
+    // D load bit - must be C instruction with appropriate d-bit set
+    And(a=instruction[15],b=instruction[4],out=Dloadbit);
+        
+    DRegister(in=ALUout,load=Dloadbit,out=DRegOut);
+    
+    // DETERMINING PC LOAD BIT
+    
+    Not(in=ALUng,out=nALUng);
+    Not(in=ALUzr,out=nALUzr);
+    
+    //jbit 0 - jump if greater than
+    And(a=nALUzr,b=nALUng,out=JGTload1);
+    And(a=JGTload1,b=instruction[0],out=JGTload);
+    
+    //jbit 2 = jump if less than
+    And(a=nALUzr,b=ALUng,out=JLTload1);
+    And(a=JLTload1,b=instruction[2],out=JLTload);
+        
+    //jbit 1 = jump if equal to
+    And(a=ALUzr,b=nALUng,out=JEQload1);
+    And(a=JEQload1,b=instruction[1],out=JEQload);
+    
+    // determine final load bit
+    Or(a=JGTload,b=JLTload,out=load1);
+    Or(a=load1,b=JEQload,out=load2);
+    // and make sure it is a C instruction
+    And(a=load2,b=instruction[15],out=loadbit);
+    
+    Not(in=loadbit,out=incbit);
+    
+    PC(in=ARegOut,inc=incbit,load=loadbit,reset=reset,out[0..14]=pc);
+    
+    // writeM
+    // both C instruction and M d-bit must be true
+    And(a=instruction[15],b=instruction[3],out=writeM);
+    
+}
